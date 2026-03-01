@@ -1163,7 +1163,9 @@
             <strong>Created:</strong> ${createdDate}
             ${redeemedDate ? '<br><strong>Redeemed:</strong> ' + redeemedDate : ''}
           </div>
-          ${!isUsed ? `<button class="voucher-redeem-btn" id="redeemBtn" onclick="redeemVoucher('${doc.id}')">Mark as Used</button>` : ''}
+          ${!isUsed
+            ? `<button class="voucher-redeem-btn" id="redeemBtn" onclick="redeemVoucher('${doc.id}')">Mark as Used</button>`
+            : `<button class="voucher-redeem-btn" id="redeemBtn" style="background:var(--accent)" onclick="reactivateVoucher('${doc.id}')">Reactivate Voucher</button>`}
         </div>`;
     } catch (err) {
       console.error('Voucher lookup error:', err);
@@ -1182,12 +1184,30 @@
         redeemedBy: currentUser.uid
       });
       showToast('Voucher marked as used!', 'success');
-      // Refresh the result
       lookupVoucher();
     } catch (err) {
       console.error('Redeem error:', err);
       showToast('Failed to redeem voucher', 'error');
       if (btn) { btn.disabled = false; btn.textContent = 'Mark as Used'; }
+    }
+  }
+
+  async function reactivateVoucher(docId) {
+    const btn = document.getElementById('redeemBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
+
+    try {
+      await db.collection('vouchers').doc(docId).update({
+        used: false,
+        redeemedAt: firebase.firestore.FieldValue.deleteField(),
+        redeemedBy: firebase.firestore.FieldValue.deleteField()
+      });
+      showToast('Voucher reactivated!', 'success');
+      lookupVoucher();
+    } catch (err) {
+      console.error('Reactivate error:', err);
+      showToast('Failed to reactivate voucher', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Reactivate Voucher'; }
     }
   }
 
@@ -1260,7 +1280,7 @@
           </div>
           <div class="user-voucher-right">
             ${isUsed
-              ? '<span class="used-label">Used</span>'
+              ? `<button class="used-label" style="cursor:pointer" onclick="markVoucherActive('${v.id}', this)">Used</button>`
               : `<button class="mark-used-btn" onclick="markVoucherUsed('${v.id}', this)">Mark Used</button>`}
           </div>
         </div>`;
@@ -1282,6 +1302,22 @@
       console.error('Mark used error:', err);
       showToast('Failed to update voucher', 'error');
       if (btn) { btn.disabled = false; btn.textContent = 'Mark Used'; }
+    }
+  }
+
+  async function markVoucherActive(docId, btn) {
+    if (btn) { btn.disabled = true; btn.textContent = '...'; }
+    try {
+      await db.collection('vouchers').doc(docId).update({
+        used: false,
+        redeemedAt: firebase.firestore.FieldValue.deleteField(),
+        redeemedBy: firebase.firestore.FieldValue.deleteField()
+      });
+      showToast('Voucher reactivated!', 'success');
+    } catch (err) {
+      console.error('Reactivate error:', err);
+      showToast('Failed to reactivate voucher', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Used'; }
     }
   }
 
