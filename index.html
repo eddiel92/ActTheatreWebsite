@@ -73,25 +73,78 @@
     letter-spacing: 0.5px;
   }
   .header-title span { color: var(--green); }
-  .live-badge {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 11px;
+
+  .login-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    color: var(--white);
+    font-family: var(--font-body);
+    font-size: 12px;
     font-weight: 600;
-    color: var(--green);
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
+    cursor: pointer;
+    transition: border-color 0.2s;
   }
-  .live-dot {
-    width: 7px; height: 7px;
-    background: var(--green);
+  .login-btn:hover { border-color: var(--green); }
+  .login-btn svg { width: 16px; height: 16px; }
+
+  .user-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px 4px 4px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .user-pill:hover { border-color: var(--green); }
+  .user-avatar {
+    width: 28px; height: 28px;
     border-radius: 50%;
-    animation: pulse-dot 1.8s ease-in-out infinite;
-    box-shadow: 0 0 6px var(--green-glow);
+    object-fit: cover;
   }
-  @keyframes pulse-dot {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(0.8); }
+  .user-name {
+    font-size: 12px;
+    font-weight: 600;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
+
+  .user-menu {
+    display: none;
+    position: absolute;
+    top: 56px;
+    right: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 6px;
+    z-index: 200;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .user-menu.show { display: block; }
+  .user-menu button {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 13px;
+    padding: 10px 16px;
+    cursor: pointer;
+    border-radius: 6px;
+    text-align: left;
+  }
+  .user-menu button:hover { background: var(--surface-2); color: var(--white); }
 
   /* === PROMO BANNER === */
   .promo-banner {
@@ -99,25 +152,73 @@
     border: 1px solid rgba(0, 230, 118, 0.2);
     margin: 12px;
     border-radius: 10px;
-    padding: 12px 14px;
+    padding: 14px;
+    animation: fadeSlideIn 0.6s ease-out;
+    display: none;
+  }
+  .promo-banner.active { display: block; }
+  .promo-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    animation: fadeSlideIn 0.6s ease-out;
+    gap: 8px;
+    margin-bottom: 8px;
   }
-  .promo-icon {
-    font-size: 22px;
+  .promo-icon { font-size: 20px; }
+  .promo-title {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--green);
+  }
+  .promo-desc {
+    font-size: 13px;
+    color: rgba(240, 244, 248, 0.8);
+    line-height: 1.4;
+    margin-bottom: 10px;
+  }
+  .promo-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .promo-countdown {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--amber);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .promo-claims {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .promo-claim-btn {
+    background: var(--green);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s, opacity 0.2s;
     flex-shrink: 0;
   }
-  .promo-text {
-    font-size: 13px;
-    line-height: 1.4;
-    color: var(--green);
-    font-weight: 500;
+  .promo-claim-btn:active { transform: scale(0.95); }
+  .promo-claim-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
-  .promo-text strong { font-weight: 700; }
+  .promo-claim-btn.claimed {
+    background: var(--surface-2);
+    color: var(--green);
+    border: 1px solid var(--green);
+  }
 
-  /* === SLOT COUNTER HERO === */
+  /* === AVAILABILITY HERO === */
   .slot-hero {
     margin: 8px 12px 16px;
     padding: 28px 20px 24px;
@@ -137,6 +238,10 @@
     background: radial-gradient(ellipse at center, var(--green-glow) 0%, transparent 70%);
     opacity: 0.35;
     pointer-events: none;
+    transition: background 0.5s;
+  }
+  .slot-hero.status-few::before {
+    background: radial-gradient(ellipse at center, var(--amber-glow) 0%, transparent 70%);
   }
   .slot-hero.status-full::before {
     background: radial-gradient(ellipse at center, var(--red-glow) 0%, transparent 70%);
@@ -147,30 +252,32 @@
     letter-spacing: 2.5px;
     color: var(--muted);
     font-weight: 600;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
     position: relative;
   }
-  .slot-number {
+  .status-text {
     font-family: var(--font-mono);
-    font-size: 96px;
+    font-size: 48px;
     font-weight: 700;
     line-height: 1;
     color: var(--green);
     position: relative;
     text-shadow: 0 0 40px var(--green-glow);
-    transition: color 0.3s;
+    transition: color 0.3s, text-shadow 0.3s;
   }
-  .slot-hero.status-low .slot-number { color: var(--amber); text-shadow: 0 0 40px var(--amber-glow); }
-  .slot-hero.status-full .slot-number { color: var(--red); text-shadow: 0 0 40px var(--red-glow); font-size: 64px; }
-  .slot-sublabel {
+  .slot-hero.status-few .status-text {
+    color: var(--amber);
+    text-shadow: 0 0 40px var(--amber-glow);
+  }
+  .slot-hero.status-full .status-text {
+    color: var(--red);
+    text-shadow: 0 0 40px var(--red-glow);
+  }
+  .status-subtitle {
     font-size: 14px;
     color: var(--muted);
-    margin-top: 6px;
+    margin-top: 8px;
     position: relative;
-  }
-  .slot-sublabel strong {
-    color: var(--white);
-    font-weight: 600;
   }
   .slot-meta {
     display: flex;
@@ -187,6 +294,18 @@
     gap: 5px;
   }
   .slot-meta-item svg { width: 14px; height: 14px; stroke: var(--muted); fill: none; stroke-width: 2; }
+
+  .loading-shimmer {
+    background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 8px;
+    display: inline-block;
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
 
   /* === STATUS STRIP === */
   .status-strip {
@@ -217,6 +336,7 @@
     color: var(--green);
   }
   .status-card-value.amber { color: var(--amber); }
+  .status-card-value.red { color: var(--red); }
 
   /* === SECTIONS === */
   .section {
@@ -300,9 +420,7 @@
     gap: 10px;
     margin-bottom: 10px;
   }
-  .calc-field {
-    flex: 1;
-  }
+  .calc-field { flex: 1; }
   .calc-field label {
     display: block;
     font-size: 11px;
@@ -323,9 +441,7 @@
     outline: none;
     transition: border-color 0.2s;
   }
-  .calc-field input:focus, .calc-field select:focus {
-    border-color: var(--accent);
-  }
+  .calc-field input:focus, .calc-field select:focus { border-color: var(--accent); }
   .calc-result {
     background: rgba(0, 188, 212, 0.08);
     border: 1px solid rgba(0, 188, 212, 0.2);
@@ -357,16 +473,14 @@
   }
   .comp-row {
     display: grid;
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr auto auto auto;
     gap: 8px;
     padding: 14px 14px;
     align-items: center;
     border-bottom: 1px solid var(--border);
   }
   .comp-row:last-child { border-bottom: none; }
-  .comp-row.is-act {
-    background: rgba(0, 230, 118, 0.04);
-  }
+  .comp-row.is-act { background: rgba(0, 230, 118, 0.04); }
   .comp-name {
     font-size: 14px;
     font-weight: 600;
@@ -397,6 +511,19 @@
     text-align: right;
     white-space: nowrap;
   }
+  .comp-busy {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .busy-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .busy-dot.green { background: var(--green); box-shadow: 0 0 6px var(--green-glow); }
+  .busy-dot.yellow { background: var(--amber); box-shadow: 0 0 6px var(--amber-glow); }
+  .busy-dot.red { background: var(--red); box-shadow: 0 0 6px var(--red-glow); }
   .comp-note {
     grid-column: 1 / -1;
     font-size: 11px;
@@ -406,7 +533,7 @@
   .comp-row.is-act .comp-rate { color: var(--green); }
   .comp-header {
     display: grid;
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr auto auto auto;
     gap: 8px;
     padding: 10px 14px 8px;
     border-bottom: 1px solid var(--border);
@@ -487,14 +614,37 @@
   }
   .footer a { color: var(--accent); text-decoration: none; }
 
+  /* === TOAST === */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 999;
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    pointer-events: none;
+    max-width: 90%;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error { border-color: var(--red); color: var(--red); }
+
   /* === ANIMATIONS === */
   @keyframes fadeSlideIn {
     from { opacity: 0; transform: translateY(12px); }
     to { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes countUp {
-    from { opacity: 0; transform: scale(0.8); }
-    to { opacity: 1; transform: scale(1); }
   }
 
   /* === SCROLLBAR === */
@@ -526,27 +676,44 @@
       <div class="logo-mark">ACT</div>
       <div class="header-title"><span>ACT</span> PARKING</div>
     </div>
-    <div class="live-badge">
-      <div class="live-dot"></div>
-      LIVE
+    <div id="authArea">
+      <button class="login-btn" id="loginBtn" onclick="handleLogin()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Sign In
+      </button>
+    </div>
+    <div class="user-menu" id="userMenu">
+      <button onclick="handleLogout()">Sign Out</button>
     </div>
   </header>
 
-  <!-- PROMO -->
-  <div class="promo-banner" id="promo">
-    <div class="promo-icon">🏍️</div>
-    <div class="promo-text"><strong>GRAND OPENING PROMO!</strong><br>First 3 hours FREE for the first month. Use code <strong>ACTMOTO</strong></div>
+  <!-- PROMO BANNER -->
+  <div class="promo-banner" id="promoBanner">
+    <div class="promo-header">
+      <div class="promo-icon">🏍️</div>
+      <div class="promo-title" id="promoTitle">Loading...</div>
+    </div>
+    <div class="promo-desc" id="promoDesc"></div>
+    <div class="promo-footer">
+      <div>
+        <div class="promo-countdown" id="promoCountdown"></div>
+        <div class="promo-claims" id="promoClaims"></div>
+      </div>
+      <button class="promo-claim-btn" id="promoClaimBtn" onclick="handleClaim()">Claim</button>
+    </div>
   </div>
 
-  <!-- SLOT COUNTER -->
+  <!-- AVAILABILITY HERO -->
   <div class="slot-hero" id="slotHero">
-    <div class="slot-label">Motorcycle Slots Available</div>
-    <div class="slot-number" id="slotCount">---</div>
-    <div class="slot-sublabel">of <strong>400</strong> total slots</div>
+    <div class="slot-label">Parking Status</div>
+    <div class="status-text" id="statusDisplay">
+      <span class="loading-shimmer" style="width: 200px; height: 48px;">&nbsp;</span>
+    </div>
+    <div class="status-subtitle" id="statusSubtitle">Checking availability...</div>
     <div class="slot-meta">
       <div class="slot-meta-item">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        Updated <span id="updateTime">just now</span>
+        Updated <span id="updateTime">--</span>
       </div>
       <div class="slot-meta-item">
         <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 6v6l4 2" stroke="var(--bg)" stroke-width="0"/><circle cx="12" cy="12" r="3" fill="var(--muted)"/></svg>
@@ -559,11 +726,11 @@
   <div class="status-strip">
     <div class="status-card">
       <div class="status-card-label">Status</div>
-      <div class="status-card-value" id="statusText">OPEN</div>
+      <div class="status-card-value" id="statusText">--</div>
     </div>
     <div class="status-card">
-      <div class="status-card-label">Avg. Wait</div>
-      <div class="status-card-value amber" id="waitTime">~1 min</div>
+      <div class="status-card-label">Last Updated</div>
+      <div class="status-card-value amber" id="lastUpdated">--</div>
     </div>
   </div>
 
@@ -630,25 +797,31 @@
         <span>Location</span>
         <span style="text-align:right">First 3h</span>
         <span style="text-align:right">Hours</span>
+        <span style="text-align:center">Busy</span>
       </div>
       <div class="comp-row is-act">
-        <div class="comp-name">ACT Theater <span class="comp-tag">You're Here</span></div>
+        <div class="comp-name">ACT Theater <span class="comp-tag">Live</span></div>
         <div class="comp-rate">₱30</div>
         <div class="comp-hours">24/7</div>
+        <div class="comp-busy"><div class="busy-dot" id="actBusyDot"></div></div>
       </div>
       <div class="comp-row">
         <div class="comp-name">Puregold Cubao</div>
         <div class="comp-rate">₱20</div>
         <div class="comp-hours">til 8:30pm</div>
+        <div class="comp-busy"><div class="busy-dot yellow"></div></div>
         <div class="comp-note">⚠️ Closes early — often full by 2PM on weekdays</div>
       </div>
       <div class="comp-row">
         <div class="comp-name">Araneta Coliseum</div>
         <div class="comp-rate">₱50</div>
         <div class="comp-hours">6am–12am</div>
+        <div class="comp-busy"><div class="busy-dot yellow"></div></div>
         <div class="comp-note">Covered area fills up fast during events</div>
       </div>
-      <div class="comp-footer">Rates last verified: Feb 27, 2026 · Rates may change without notice</div>
+      <div class="comp-footer">
+        ACT busyness is live · Competitor data is estimated · Rates last verified: Feb 27, 2026
+      </div>
     </div>
   </div>
 
@@ -708,64 +881,349 @@
 
 </div>
 
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- =============================================
+     FIREBASE SDK (v9 compat via CDN)
+     ============================================= -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
 <script>
-  // === SIMULATED LIVE COUNTER ===
-  const CAPACITY = 400;
-  let currentSlots = 137;
+  // =================================================================
+  // FIREBASE CONFIG — Replace with your project's config
+  // Go to: Firebase Console → Project Settings → Your Apps → Config
+  // =================================================================
+  const firebaseConfig = {
+    apiKey: "AIzaSyC-8ZRihLeXm-LJC2DIyvNUPUaz_3FyfD8",
+    authDomain: "act-parking.firebaseapp.com",
+    projectId: "act-parking",
+    storageBucket: "act-parking.firebasestorage.app",
+    messagingSenderId: "261394457502",
+    appId: "1:261394457502:web:4931d57ac2c184dca56c8f"
+  };
 
-  function updateSlotDisplay(count) {
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+  const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+  // =================================================================
+  // STATE
+  // =================================================================
+  let currentUser = null;
+  let activePromo = null;
+  let userHasClaimed = false;
+  let countdownInterval = null;
+
+  // =================================================================
+  // AUTH
+  // =================================================================
+  auth.onAuthStateChanged(user => {
+    currentUser = user;
+    renderAuthUI();
+    if (user && activePromo) {
+      checkUserClaim(activePromo.id);
+    }
+  });
+
+  function renderAuthUI() {
+    const area = document.getElementById('authArea');
+    if (currentUser) {
+      area.innerHTML = `
+        <div class="user-pill" onclick="toggleUserMenu()">
+          <img class="user-avatar" src="${currentUser.photoURL || ''}" alt="" referrerpolicy="no-referrer">
+          <span class="user-name">${currentUser.displayName || 'User'}</span>
+        </div>`;
+    } else {
+      area.innerHTML = `
+        <button class="login-btn" onclick="handleLogin()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Sign In
+        </button>`;
+    }
+  }
+
+  function handleLogin() {
+    auth.signInWithPopup(googleProvider).catch(err => {
+      if (err.code !== 'auth/popup-closed-by-user') {
+        showToast('Login failed. Please try again.', 'error');
+      }
+    });
+  }
+
+  function handleLogout() {
+    auth.signOut();
+    document.getElementById('userMenu').classList.remove('show');
+  }
+
+  function toggleUserMenu() {
+    document.getElementById('userMenu').classList.toggle('show');
+  }
+
+  // Close menu on outside click
+  document.addEventListener('click', e => {
+    const menu = document.getElementById('userMenu');
+    const pill = document.querySelector('.user-pill');
+    if (pill && !pill.contains(e.target) && !menu.contains(e.target)) {
+      menu.classList.remove('show');
+    }
+  });
+
+  // =================================================================
+  // AVAILABILITY — Real-time listener
+  // =================================================================
+  db.collection('config').doc('parking').onSnapshot(doc => {
+    if (doc.exists) {
+      const data = doc.data();
+      updateAvailabilityUI(data.status, data.updatedAt);
+    } else {
+      // No config doc yet — show default
+      updateAvailabilityUI('available', null);
+    }
+  }, err => {
+    console.error('Availability listener error:', err);
+    updateAvailabilityUI('available', null);
+  });
+
+  function updateAvailabilityUI(status, updatedAt) {
     const hero = document.getElementById('slotHero');
-    const numEl = document.getElementById('slotCount');
-    const statusEl = document.getElementById('statusText');
-    const waitEl = document.getElementById('waitTime');
-
-    numEl.textContent = count;
+    const display = document.getElementById('statusDisplay');
+    const subtitle = document.getElementById('statusSubtitle');
+    const statusText = document.getElementById('statusText');
+    const lastUpdated = document.getElementById('lastUpdated');
+    const updateTime = document.getElementById('updateTime');
+    const actDot = document.getElementById('actBusyDot');
 
     hero.className = 'slot-hero';
-    if (count === 0) {
-      hero.classList.add('status-full');
-      numEl.textContent = 'FULL';
-      statusEl.textContent = 'FULL';
-      statusEl.style.color = 'var(--red)';
-      waitEl.textContent = 'N/A';
-    } else if (count <= 30) {
-      hero.classList.add('status-low');
-      statusEl.textContent = 'FILLING UP';
-      statusEl.style.color = 'var(--amber)';
-      waitEl.textContent = '~3 min';
+
+    const statusMap = {
+      available: { text: 'AVAILABLE', sub: 'Motorcycle slots are open', class: '', cardColor: '', dotClass: 'green' },
+      few:       { text: 'FEW SLOTS', sub: 'Limited slots remaining — come soon', class: 'status-few', cardColor: 'amber', dotClass: 'yellow' },
+      full:      { text: 'FULL', sub: 'No slots available right now', class: 'status-full', cardColor: 'red', dotClass: 'red' }
+    };
+
+    const s = statusMap[status] || statusMap.available;
+    if (s.class) hero.classList.add(s.class);
+
+    display.textContent = s.text;
+    subtitle.textContent = s.sub;
+    statusText.textContent = s.text;
+    statusText.className = 'status-card-value' + (s.cardColor ? ' ' + s.cardColor : '');
+
+    // ACT busyness dot in comparison table
+    actDot.className = 'busy-dot ' + s.dotClass;
+
+    // Timestamp
+    if (updatedAt && updatedAt.toDate) {
+      const d = updatedAt.toDate();
+      const timeStr = d.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' });
+      updateTime.textContent = timeStr;
+      lastUpdated.textContent = timeStr;
     } else {
-      statusEl.textContent = 'OPEN';
-      statusEl.style.color = 'var(--green)';
-      waitEl.textContent = '~1 min';
+      updateTime.textContent = 'just now';
+      lastUpdated.textContent = '--';
     }
   }
 
-  // Animate count on load
-  function animateCount(target, duration = 1200) {
-    const numEl = document.getElementById('slotCount');
-    const start = performance.now();
-    function step(now) {
-      const progress = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const current = Math.round(eased * target);
-      numEl.textContent = current;
-      if (progress < 1) requestAnimationFrame(step);
-      else updateSlotDisplay(target);
+  // =================================================================
+  // PROMOS — Real-time listener for active promos
+  // =================================================================
+  db.collection('promos')
+    .where('active', '==', true)
+    .orderBy('endTime', 'asc')
+    .onSnapshot(snapshot => {
+      const now = new Date();
+      let foundPromo = null;
+
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const endTime = data.endTime && data.endTime.toDate ? data.endTime.toDate() : null;
+        if (endTime && endTime > now) {
+          if (!foundPromo) {
+            foundPromo = { id: doc.id, ...data };
+          }
+        }
+      });
+
+      if (foundPromo) {
+        activePromo = foundPromo;
+        renderPromo(foundPromo);
+        if (currentUser) {
+          checkUserClaim(foundPromo.id);
+        }
+      } else {
+        activePromo = null;
+        document.getElementById('promoBanner').classList.remove('active');
+        if (countdownInterval) clearInterval(countdownInterval);
+      }
+    }, err => {
+      console.error('Promos listener error:', err);
+    });
+
+  function renderPromo(promo) {
+    const banner = document.getElementById('promoBanner');
+    document.getElementById('promoTitle').textContent = promo.title;
+    document.getElementById('promoDesc').textContent = promo.description || '';
+
+    const maxClaims = promo.maxClaims || 0;
+    const claimCount = promo.claimCount || 0;
+    const remaining = Math.max(0, maxClaims - claimCount);
+    document.getElementById('promoClaims').textContent =
+      maxClaims > 0 ? `${remaining} of ${maxClaims} remaining` : '';
+
+    // Disable if max claims reached
+    const btn = document.getElementById('promoClaimBtn');
+    if (maxClaims > 0 && claimCount >= maxClaims) {
+      btn.textContent = 'Sold Out';
+      btn.disabled = true;
+      btn.classList.remove('claimed');
     }
-    requestAnimationFrame(step);
+
+    // Start countdown
+    startCountdown(promo);
+
+    banner.classList.add('active');
   }
 
-  // Simulate small fluctuations every 15s
-  function simulateLiveUpdates() {
-    setInterval(() => {
-      const delta = Math.floor(Math.random() * 5) - 2;
-      currentSlots = Math.max(0, Math.min(CAPACITY, currentSlots + delta));
-      updateSlotDisplay(currentSlots);
-      document.getElementById('updateTime').textContent = 'just now';
-    }, 15000);
+  function startCountdown(promo) {
+    if (countdownInterval) clearInterval(countdownInterval);
+    const el = document.getElementById('promoCountdown');
+    const endTime = promo.endTime && promo.endTime.toDate ? promo.endTime.toDate() : null;
+
+    if (!endTime) {
+      el.textContent = '';
+      return;
+    }
+
+    function tick() {
+      const now = new Date();
+      const diff = endTime - now;
+      if (diff <= 0) {
+        el.textContent = 'Expired';
+        clearInterval(countdownInterval);
+        return;
+      }
+      const hrs = Math.floor(diff / 3600000);
+      const mins = Math.floor((diff % 3600000) / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+      if (hrs > 0) {
+        el.textContent = `⏱ ${hrs}h ${mins}m ${secs}s left`;
+      } else {
+        el.textContent = `⏱ ${mins}m ${secs}s left`;
+      }
+    }
+
+    tick();
+    countdownInterval = setInterval(tick, 1000);
   }
 
-  // === RATE CALCULATOR ===
+  // =================================================================
+  // CLAIM PROMO
+  // =================================================================
+  async function checkUserClaim(promoId) {
+    if (!currentUser) return;
+    const snap = await db.collection('claims')
+      .where('promoId', '==', promoId)
+      .where('userId', '==', currentUser.uid)
+      .limit(1)
+      .get();
+
+    userHasClaimed = !snap.empty;
+    updateClaimButton();
+  }
+
+  function updateClaimButton() {
+    const btn = document.getElementById('promoClaimBtn');
+    if (!activePromo) return;
+
+    const maxClaims = activePromo.maxClaims || 0;
+    const claimCount = activePromo.claimCount || 0;
+
+    if (userHasClaimed) {
+      btn.textContent = 'Claimed ✓';
+      btn.disabled = true;
+      btn.classList.add('claimed');
+    } else if (maxClaims > 0 && claimCount >= maxClaims) {
+      btn.textContent = 'Sold Out';
+      btn.disabled = true;
+      btn.classList.remove('claimed');
+    } else {
+      btn.textContent = 'Claim';
+      btn.disabled = false;
+      btn.classList.remove('claimed');
+    }
+  }
+
+  async function handleClaim() {
+    if (!activePromo) return;
+
+    if (!currentUser) {
+      showToast('Sign in with Google to claim this promo', 'error');
+      handleLogin();
+      return;
+    }
+
+    if (userHasClaimed) return;
+
+    const btn = document.getElementById('promoClaimBtn');
+    btn.disabled = true;
+    btn.textContent = 'Claiming...';
+
+    try {
+      // Check max claims
+      const maxClaims = activePromo.maxClaims || 0;
+      const claimCount = activePromo.claimCount || 0;
+      if (maxClaims > 0 && claimCount >= maxClaims) {
+        showToast('Sorry, this promo is sold out!', 'error');
+        btn.textContent = 'Sold Out';
+        return;
+      }
+
+      // Check if already claimed
+      const existing = await db.collection('claims')
+        .where('promoId', '==', activePromo.id)
+        .where('userId', '==', currentUser.uid)
+        .limit(1)
+        .get();
+
+      if (!existing.empty) {
+        userHasClaimed = true;
+        updateClaimButton();
+        showToast('You already claimed this promo!', 'error');
+        return;
+      }
+
+      // Write claim
+      await db.collection('claims').add({
+        promoId: activePromo.id,
+        userId: currentUser.uid,
+        userEmail: currentUser.email || '',
+        userName: currentUser.displayName || '',
+        claimedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      // Increment claim count
+      await db.collection('promos').doc(activePromo.id).update({
+        claimCount: firebase.firestore.FieldValue.increment(1)
+      });
+
+      userHasClaimed = true;
+      updateClaimButton();
+      showToast('Promo claimed! Show this to the attendant.', 'success');
+    } catch (err) {
+      console.error('Claim error:', err);
+      showToast('Failed to claim. Please try again.', 'error');
+      btn.disabled = false;
+      btn.textContent = 'Claim';
+    }
+  }
+
+  // =================================================================
+  // RATE CALCULATOR
+  // =================================================================
   function calculateRate() {
     const hours = parseInt(document.getElementById('calcHours').value);
     let fee;
@@ -774,16 +1232,21 @@
     } else if (hours <= 12) {
       fee = 30 + (hours - 3) * 10;
     } else {
-      fee = 120; // overnight flat
+      fee = 120;
     }
     document.getElementById('calcResult').textContent = '₱' + fee;
   }
 
-  // === INIT ===
-  window.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => animateCount(currentSlots), 300);
-    simulateLiveUpdates();
-  });
+  // =================================================================
+  // TOAST
+  // =================================================================
+  function showToast(message, type) {
+    const el = document.getElementById('toast');
+    el.textContent = message;
+    el.className = 'toast ' + (type || '');
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 3000);
+  }
 </script>
 </body>
 </html>

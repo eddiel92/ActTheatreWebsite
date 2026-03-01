@@ -1,0 +1,50 @@
+rules_version = '2';
+
+// =================================================================
+// ACT Parking — Firestore Security Rules
+// Copy these rules into Firebase Console → Firestore → Rules
+// =================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----- Config (parking status) -----
+    // Readable by all (riders see live status)
+    // Writable only by admin emails
+    match /config/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ----- Promos -----
+    // Readable by all (riders see active promos)
+    // Writable only by admin emails
+    match /promos/{promoId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ----- Claims -----
+    // Readable only by admins (to see who claimed)
+    // Writable by any authenticated user (riders claiming promos)
+    // One claim per user per promo enforced at app level
+    match /claims/{claimId} {
+      allow read: if isAdmin();
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.promoId is string
+        && request.resource.data.claimedAt is timestamp;
+      allow update, delete: if false;
+    }
+
+    // ----- Admin check -----
+    // UPDATE THIS LIST with your admin email(s)
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email in [
+          "eddie@litonjua.com"
+          // Add more admin emails here, comma-separated
+        ];
+    }
+  }
+}

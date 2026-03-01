@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ACT Parking — Admin Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e13;
+    --surface: #111820;
+    --surface-2: #19222d;
+    --border: #243040;
+    --green: #00e676;
+    --green-dim: #00c853;
+    --green-glow: rgba(0, 230, 118, 0.25);
+    --amber: #ffab00;
+    --amber-glow: rgba(255, 171, 0, 0.2);
+    --red: #ff5252;
+    --red-glow: rgba(255, 82, 82, 0.2);
+    --white: #f0f4f8;
+    --muted: #7a8fa6;
+    --accent: #00bcd4;
+    --font-mono: 'Space Mono', monospace;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--white);
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  /* === HEADER === */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10, 14, 19, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-mark {
+    width: 36px; height: 36px;
+    background: var(--red);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--white);
+    letter-spacing: -1px;
+  }
+  .header-title {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .header-title span { color: var(--red); }
+  .admin-badge {
+    font-size: 9px;
+    background: var(--red);
+    color: var(--white);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .header-user {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .logout-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: var(--font-body);
+  }
+  .logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+  /* === LOGIN SCREEN === */
+  .login-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+    padding: 20px;
+    text-align: center;
+  }
+  .login-screen .logo-mark {
+    width: 64px; height: 64px;
+    font-size: 24px;
+    margin-bottom: 16px;
+  }
+  .login-screen h1 {
+    font-family: var(--font-mono);
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+  .login-screen p {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+  .google-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--white);
+    color: #333;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .google-btn:active { transform: scale(0.97); }
+  .google-btn svg { width: 20px; height: 20px; }
+  .login-error {
+    color: var(--red);
+    font-size: 13px;
+    margin-top: 16px;
+    display: none;
+  }
+
+  /* === MAIN CONTENT === */
+  .admin-content {
+    display: none;
+    padding: 16px 12px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .admin-content.show { display: block; }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 16px;
+    margin-bottom: 16px;
+  }
+  .panel-title {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  /* === STATUS TOGGLE === */
+  .status-toggles {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  .status-toggle {
+    background: var(--surface-2);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    font-family: var(--font-body);
+    color: var(--white);
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .status-toggle:hover { border-color: var(--muted); }
+  .status-toggle.active-green {
+    border-color: var(--green);
+    background: rgba(0, 230, 118, 0.08);
+    color: var(--green);
+    box-shadow: 0 0 20px rgba(0, 230, 118, 0.1);
+  }
+  .status-toggle.active-amber {
+    border-color: var(--amber);
+    background: rgba(255, 171, 0, 0.08);
+    color: var(--amber);
+    box-shadow: 0 0 20px rgba(255, 171, 0, 0.1);
+  }
+  .status-toggle.active-red {
+    border-color: var(--red);
+    background: rgba(255, 82, 82, 0.08);
+    color: var(--red);
+    box-shadow: 0 0 20px rgba(255, 82, 82, 0.1);
+  }
+  .status-toggle .dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    margin: 0 auto 8px;
+  }
+  .status-toggle .dot.green { background: var(--green); }
+  .status-toggle .dot.amber { background: var(--amber); }
+  .status-toggle .dot.red { background: var(--red); }
+  .status-updated {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 12px;
+  }
+
+  /* === PROMO FORM === */
+  .form-group {
+    margin-bottom: 14px;
+  }
+  .form-group label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--white);
+    font-family: var(--font-body);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-group textarea {
+    resize: vertical;
+    min-height: 60px;
+  }
+  .form-group input:focus,
+  .form-group textarea:focus { border-color: var(--accent); }
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .launch-btn {
+    width: 100%;
+    background: var(--green);
+    color: var(--bg);
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: transform 0.15s, opacity 0.2s;
+    margin-top: 4px;
+  }
+  .launch-btn:active { transform: scale(0.98); }
+  .launch-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* === ACTIVE PROMOS LIST === */
+  .promo-item {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 8px;
+  }
+  .promo-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  .promo-item-title {
+    font-weight: 700;
+    font-size: 14px;
+  }
+  .deactivate-btn {
+    background: none;
+    border: 1px solid var(--red);
+    color: var(--red);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .deactivate-btn:hover { background: rgba(255, 82, 82, 0.1); }
+  .promo-item-stats {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .promo-item-stats span { display: flex; align-items: center; gap: 4px; }
+  .promo-item-stats .count { color: var(--green); font-weight: 700; font-family: var(--font-mono); }
+
+  .no-promos {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    padding: 20px;
+  }
+
+  /* === PROMO HISTORY === */
+  .history-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 13px;
+    cursor: pointer;
+    width: 100%;
+    padding: 0;
+    margin-bottom: 12px;
+  }
+  .history-toggle:hover { color: var(--white); }
+  .history-toggle svg {
+    width: 16px; height: 16px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    transition: transform 0.2s;
+  }
+  .history-toggle.open svg { transform: rotate(180deg); }
+  .history-list {
+    display: none;
+  }
+  .history-list.show { display: block; }
+  .history-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .history-item-title {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .history-item-meta {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .history-item-claims {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--green);
+  }
+
+  /* === TOAST === */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 999;
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    pointer-events: none;
+    max-width: 90%;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error { border-color: var(--red); color: var(--red); }
+
+  /* === DESKTOP CAP === */
+  @media (min-width: 480px) {
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #050810;
+    }
+    .header {
+      max-width: 600px;
+      width: 100%;
+    }
+  }
+
+  ::-webkit-scrollbar { width: 0; }
+</style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header" id="adminHeader" style="display: none;">
+    <div class="header-left">
+      <div class="logo-mark">ACT</div>
+      <div class="header-title"><span>ACT</span> ADMIN</div>
+      <span class="admin-badge">Admin</span>
+    </div>
+    <div class="header-right">
+      <span class="header-user" id="adminEmail"></span>
+      <button class="logout-btn" onclick="handleLogout()">Sign Out</button>
+    </div>
+  </header>
+
+  <!-- LOGIN SCREEN -->
+  <div class="login-screen" id="loginScreen">
+    <div class="logo-mark">ACT</div>
+    <h1>Admin Panel</h1>
+    <p>Sign in with your authorized Google account</p>
+    <button class="google-btn" onclick="handleLogin()">
+      <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Sign in with Google
+    </button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+
+  <!-- ADMIN CONTENT -->
+  <div class="admin-content" id="adminContent">
+
+    <!-- AVAILABILITY CONTROL -->
+    <div class="panel">
+      <div class="panel-title">Availability Control</div>
+      <div class="status-toggles">
+        <button class="status-toggle" data-status="available" onclick="setStatus('available')">
+          <div class="dot green"></div>
+          Available
+        </button>
+        <button class="status-toggle" data-status="few" onclick="setStatus('few')">
+          <div class="dot amber"></div>
+          Few Slots
+        </button>
+        <button class="status-toggle" data-status="full" onclick="setStatus('full')">
+          <div class="dot red"></div>
+          Full
+        </button>
+      </div>
+      <div class="status-updated" id="statusUpdated"></div>
+    </div>
+
+    <!-- PROMO LAUNCHER -->
+    <div class="panel">
+      <div class="panel-title">Launch Promo</div>
+      <form id="promoForm" onsubmit="launchPromo(event)">
+        <div class="form-group">
+          <label>Promo Title</label>
+          <input type="text" id="promoTitle" placeholder="e.g. Free 30 Minutes!" required>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="promoDesc" placeholder="e.g. Park now and get your first 30 minutes free"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Start Time</label>
+            <input type="datetime-local" id="promoStart">
+          </div>
+          <div class="form-group">
+            <label>End Time</label>
+            <input type="datetime-local" id="promoEnd" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Max Claims (0 = unlimited)</label>
+          <input type="number" id="promoMax" value="200" min="0">
+        </div>
+        <button type="submit" class="launch-btn" id="launchBtn">Launch Promo</button>
+      </form>
+    </div>
+
+    <!-- ACTIVE PROMOS -->
+    <div class="panel">
+      <div class="panel-title">Active Promos</div>
+      <div id="activePromos">
+        <div class="no-promos">No active promos</div>
+      </div>
+    </div>
+
+    <!-- PROMO HISTORY -->
+    <div class="panel">
+      <button class="history-toggle" id="historyToggle" onclick="toggleHistory()">
+        <span>Promo History</span>
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="history-list" id="historyList"></div>
+    </div>
+
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+<!-- =============================================
+     FIREBASE SDK
+     ============================================= -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script>
+  // =================================================================
+  // FIREBASE CONFIG — Must match the config in index.html
+  // =================================================================
+  const firebaseConfig = {
+    apiKey: "AIzaSyC-8ZRihLeXm-LJC2DIyvNUPUaz_3FyfD8",
+    authDomain: "act-parking.firebaseapp.com",
+    projectId: "act-parking",
+    storageBucket: "act-parking.firebasestorage.app",
+    messagingSenderId: "261394457502",
+    appId: "1:261394457502:web:4931d57ac2c184dca56c8f"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+  const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+  // =================================================================
+  // ADMIN WHITELIST — Add your admin email(s) here
+  // =================================================================
+  const ADMIN_EMAILS = [
+    "eddie@litonjua.com"
+    // Add more admin emails as needed
+  ];
+
+  // =================================================================
+  // STATE
+  // =================================================================
+  let currentUser = null;
+  let currentStatus = 'available';
+
+  // =================================================================
+  // AUTH
+  // =================================================================
+  auth.onAuthStateChanged(user => {
+    currentUser = user;
+
+    if (user) {
+      if (!ADMIN_EMAILS.includes(user.email)) {
+        // Not an admin
+        showLoginError('Access denied. This email is not authorized as an admin.');
+        auth.signOut();
+        return;
+      }
+
+      // Show admin content
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('adminHeader').style.display = 'flex';
+      document.getElementById('adminContent').classList.add('show');
+      document.getElementById('adminEmail').textContent = user.email;
+
+      // Start listeners
+      listenToStatus();
+      listenToActivePromos();
+      listenToPromoHistory();
+
+      // Default start time to now
+      setDefaultStartTime();
+    } else {
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('adminHeader').style.display = 'none';
+      document.getElementById('adminContent').classList.remove('show');
+    }
+  });
+
+  function handleLogin() {
+    auth.signInWithPopup(googleProvider).catch(err => {
+      if (err.code !== 'auth/popup-closed-by-user') {
+        showLoginError('Login failed: ' + err.message);
+      }
+    });
+  }
+
+  function handleLogout() {
+    auth.signOut();
+  }
+
+  function showLoginError(msg) {
+    const el = document.getElementById('loginError');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  // =================================================================
+  // AVAILABILITY CONTROL
+  // =================================================================
+  function listenToStatus() {
+    db.collection('config').doc('parking').onSnapshot(doc => {
+      if (doc.exists) {
+        const data = doc.data();
+        currentStatus = data.status || 'available';
+        highlightStatusToggle(currentStatus);
+
+        if (data.updatedAt && data.updatedAt.toDate) {
+          const d = data.updatedAt.toDate();
+          document.getElementById('statusUpdated').textContent =
+            `Last updated: ${d.toLocaleString('en-PH')}`;
+        }
+      }
+    });
+  }
+
+  function highlightStatusToggle(status) {
+    document.querySelectorAll('.status-toggle').forEach(btn => {
+      btn.className = 'status-toggle';
+      if (btn.dataset.status === status) {
+        const colorMap = { available: 'active-green', few: 'active-amber', full: 'active-red' };
+        btn.classList.add(colorMap[status] || 'active-green');
+      }
+    });
+  }
+
+  async function setStatus(status) {
+    try {
+      await db.collection('config').doc('parking').set({
+        status: status,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy: currentUser.uid
+      }, { merge: true });
+      showToast('Status updated to ' + status.toUpperCase(), 'success');
+    } catch (err) {
+      console.error('Set status error:', err);
+      showToast('Failed to update status', 'error');
+    }
+  }
+
+  // =================================================================
+  // PROMO LAUNCHER
+  // =================================================================
+  function setDefaultStartTime() {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('promoStart').value = now.toISOString().slice(0, 16);
+  }
+
+  async function launchPromo(e) {
+    e.preventDefault();
+    const btn = document.getElementById('launchBtn');
+    btn.disabled = true;
+    btn.textContent = 'Launching...';
+
+    try {
+      const title = document.getElementById('promoTitle').value.trim();
+      const desc = document.getElementById('promoDesc').value.trim();
+      const startVal = document.getElementById('promoStart').value;
+      const endVal = document.getElementById('promoEnd').value;
+      const maxClaims = parseInt(document.getElementById('promoMax').value) || 0;
+
+      if (!title || !endVal) {
+        showToast('Title and end time are required', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Launch Promo';
+        return;
+      }
+
+      const startTime = startVal ? new Date(startVal) : new Date();
+      const endTime = new Date(endVal);
+
+      if (endTime <= startTime) {
+        showToast('End time must be after start time', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Launch Promo';
+        return;
+      }
+
+      await db.collection('promos').add({
+        title: title,
+        description: desc,
+        active: true,
+        startTime: firebase.firestore.Timestamp.fromDate(startTime),
+        endTime: firebase.firestore.Timestamp.fromDate(endTime),
+        maxClaims: maxClaims,
+        claimCount: 0,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        createdBy: currentUser.uid
+      });
+
+      showToast('Promo launched!', 'success');
+
+      // Reset form
+      document.getElementById('promoForm').reset();
+      setDefaultStartTime();
+      document.getElementById('promoMax').value = '200';
+    } catch (err) {
+      console.error('Launch promo error:', err);
+      showToast('Failed to launch promo', 'error');
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Launch Promo';
+  }
+
+  // =================================================================
+  // ACTIVE PROMOS LIST
+  // =================================================================
+  function listenToActivePromos() {
+    db.collection('promos')
+      .where('active', '==', true)
+      .orderBy('endTime', 'asc')
+      .onSnapshot(snapshot => {
+        const container = document.getElementById('activePromos');
+        if (snapshot.empty) {
+          container.innerHTML = '<div class="no-promos">No active promos</div>';
+          return;
+        }
+
+        let html = '';
+        snapshot.forEach(doc => {
+          const p = doc.data();
+          const endTime = p.endTime && p.endTime.toDate ? p.endTime.toDate() : null;
+          const now = new Date();
+          const isExpired = endTime && endTime <= now;
+
+          let timeLeft = '';
+          if (endTime) {
+            if (isExpired) {
+              timeLeft = 'Expired';
+            } else {
+              const diff = endTime - now;
+              const hrs = Math.floor(diff / 3600000);
+              const mins = Math.floor((diff % 3600000) / 60000);
+              timeLeft = hrs > 0 ? `${hrs}h ${mins}m left` : `${mins}m left`;
+            }
+          }
+
+          html += `
+            <div class="promo-item">
+              <div class="promo-item-header">
+                <div class="promo-item-title">${escapeHtml(p.title)}</div>
+                <button class="deactivate-btn" onclick="deactivatePromo('${doc.id}')">Deactivate</button>
+              </div>
+              <div class="promo-item-stats">
+                <span>Claims: <span class="count">${p.claimCount || 0}</span>${p.maxClaims ? ` / ${p.maxClaims}` : ''}</span>
+                <span>${timeLeft}</span>
+              </div>
+            </div>`;
+        });
+
+        container.innerHTML = html;
+      });
+  }
+
+  async function deactivatePromo(promoId) {
+    try {
+      await db.collection('promos').doc(promoId).update({ active: false });
+      showToast('Promo deactivated', 'success');
+    } catch (err) {
+      console.error('Deactivate error:', err);
+      showToast('Failed to deactivate promo', 'error');
+    }
+  }
+
+  // =================================================================
+  // PROMO HISTORY
+  // =================================================================
+  function listenToPromoHistory() {
+    db.collection('promos')
+      .where('active', '==', false)
+      .orderBy('createdAt', 'desc')
+      .limit(20)
+      .onSnapshot(snapshot => {
+        const container = document.getElementById('historyList');
+        if (snapshot.empty) {
+          container.innerHTML = '<div class="no-promos">No past promos</div>';
+          return;
+        }
+
+        let html = '';
+        snapshot.forEach(doc => {
+          const p = doc.data();
+          const created = p.createdAt && p.createdAt.toDate
+            ? p.createdAt.toDate().toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
+            : '--';
+
+          html += `
+            <div class="history-item">
+              <div>
+                <div class="history-item-title">${escapeHtml(p.title)}</div>
+                <div class="history-item-meta">${created}</div>
+              </div>
+              <div class="history-item-claims">${p.claimCount || 0} claims</div>
+            </div>`;
+        });
+
+        container.innerHTML = html;
+      });
+  }
+
+  function toggleHistory() {
+    const btn = document.getElementById('historyToggle');
+    const list = document.getElementById('historyList');
+    btn.classList.toggle('open');
+    list.classList.toggle('show');
+  }
+
+  // =================================================================
+  // UTILS
+  // =================================================================
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function showToast(message, type) {
+    const el = document.getElementById('toast');
+    el.textContent = message;
+    el.className = 'toast ' + (type || '');
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 3000);
+  }
+</script>
+</body>
+</html>
