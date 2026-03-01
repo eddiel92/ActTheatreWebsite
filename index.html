@@ -181,6 +181,87 @@
     text-align: left;
   }
   .user-menu button:hover { background: var(--surface-2); color: var(--white); }
+  .user-menu button.voucher-menu-btn { color: var(--green); }
+
+  /* === MY VOUCHER CARD (persistent, shown when logged in) === */
+  .my-voucher-card {
+    background: linear-gradient(135deg, #003d1a, #00363a);
+    border: 1px solid rgba(0, 230, 118, 0.25);
+    margin: 12px;
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: none;
+    cursor: pointer;
+    animation: fadeSlideIn 0.5s ease-out;
+    transition: transform 0.15s;
+  }
+  .my-voucher-card:active { transform: scale(0.98); }
+  .my-voucher-card.show { display: block; }
+  .my-voucher-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .my-voucher-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .my-voucher-tag {
+    font-size: 9px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .my-voucher-tag.active {
+    background: var(--green);
+    color: var(--bg);
+  }
+  .my-voucher-tag.used {
+    background: var(--muted);
+    color: var(--bg);
+  }
+  .my-voucher-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .my-voucher-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .my-voucher-icon {
+    font-size: 28px;
+  }
+  .my-voucher-detail {}
+  .my-voucher-title {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--green);
+  }
+  .my-voucher-subtitle {
+    font-size: 11px;
+    color: rgba(240, 244, 248, 0.6);
+    margin-top: 1px;
+  }
+  .my-voucher-code-display {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px dashed rgba(0, 230, 118, 0.3);
+    letter-spacing: 2px;
+  }
 
   /* === PROMO BANNER === */
   .promo-banner {
@@ -787,6 +868,7 @@
       </button>
     </div>
     <div class="user-menu" id="userMenu">
+      <button class="voucher-menu-btn" onclick="showMyVoucher()">My Voucher</button>
       <button onclick="handleLogout()">Sign Out</button>
     </div>
   </header>
@@ -799,6 +881,24 @@
       <div class="signin-cta-desc">Sign in with Google to claim your welcome voucher</div>
     </div>
     <div class="signin-cta-arrow">›</div>
+  </div>
+
+  <!-- MY VOUCHER CARD (visible when logged in) -->
+  <div class="my-voucher-card" id="myVoucherCard" onclick="showMyVoucher()">
+    <div class="my-voucher-top">
+      <span class="my-voucher-label">Your Welcome Voucher</span>
+      <span class="my-voucher-tag active" id="myVoucherTag">Active</span>
+    </div>
+    <div class="my-voucher-main">
+      <div class="my-voucher-info">
+        <div class="my-voucher-icon">🎫</div>
+        <div class="my-voucher-detail">
+          <div class="my-voucher-title">1 HR FREE PARKING</div>
+          <div class="my-voucher-subtitle">Tap to show full voucher</div>
+        </div>
+      </div>
+      <div class="my-voucher-code-display" id="myVoucherCodeSmall">---</div>
+    </div>
   </div>
 
   <!-- PROMO BANNER -->
@@ -1035,6 +1135,8 @@
   let userHasClaimed = false;
   let countdownInterval = null;
   let actStatus = 'available';
+  let savedVoucherCode = null;
+  let savedVoucherUsed = false;
 
   // Parking locations
   const LOCATIONS = {
@@ -1185,6 +1287,10 @@
     renderAuthUI();
     const cta = document.getElementById('signinCta');
     if (cta) cta.style.display = user ? 'none' : 'flex';
+    if (!user) {
+      document.getElementById('myVoucherCard').classList.remove('show');
+      savedVoucherCode = null;
+    }
     if (user && activePromo) {
       checkUserClaim(activePromo.id);
     }
@@ -1392,15 +1498,52 @@
       const voucherRef = db.collection('vouchers').doc(user.uid);
       const doc = await voucherRef.get();
       if (!doc.exists) {
+        // First-time user — create voucher and show popup
         const code = generateVoucherCode();
         await voucherRef.set({
           code: code, userId: user.uid,
           userEmail: user.email || '', userName: user.displayName || '',
           used: false, createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
+        savedVoucherCode = code;
+        savedVoucherUsed = false;
+        showVoucherCard(code, false);
         showVoucherModal(user.displayName, code);
+      } else {
+        // Returning user — load existing voucher into card
+        const data = doc.data();
+        savedVoucherCode = data.code;
+        savedVoucherUsed = data.used || false;
+        showVoucherCard(data.code, savedVoucherUsed);
       }
     } catch (err) { console.error('Voucher check error:', err); }
+  }
+
+  function showVoucherCard(code, used) {
+    const card = document.getElementById('myVoucherCard');
+    const codeEl = document.getElementById('myVoucherCodeSmall');
+    const tag = document.getElementById('myVoucherTag');
+    codeEl.textContent = code;
+    if (used) {
+      tag.textContent = 'Used';
+      tag.className = 'my-voucher-tag used';
+    } else {
+      tag.textContent = 'Active';
+      tag.className = 'my-voucher-tag active';
+    }
+    card.classList.add('show');
+  }
+
+  function showMyVoucher() {
+    document.getElementById('userMenu').classList.remove('show');
+    if (savedVoucherCode) {
+      const firstName = currentUser && currentUser.displayName
+        ? currentUser.displayName.split(' ')[0] : 'there';
+      document.getElementById('voucherGreeting').textContent =
+        savedVoucherUsed ? `${firstName}, this voucher has been used` : `Welcome back, ${firstName}!`;
+      document.getElementById('voucherCode').textContent = savedVoucherCode;
+      document.getElementById('voucherOverlay').classList.add('show');
+    }
   }
 
   function generateVoucherCode() {
