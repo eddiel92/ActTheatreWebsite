@@ -389,6 +389,123 @@
     color: var(--green);
   }
 
+  /* === VOUCHER REDEMPTION === */
+  .voucher-search-row {
+    display: flex;
+    gap: 8px;
+  }
+  .voucher-search-row input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--white);
+    font-family: var(--font-mono);
+    font-size: 15px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .voucher-search-row input:focus { border-color: var(--accent); }
+  .voucher-search-row input::placeholder {
+    font-family: var(--font-body);
+    font-size: 13px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--muted);
+  }
+  .voucher-search-btn {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: var(--font-body);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+  }
+  .voucher-search-btn:active { opacity: 0.8; }
+  .voucher-result {
+    margin-top: 14px;
+    display: none;
+  }
+  .voucher-result.show { display: block; }
+  .voucher-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .voucher-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .voucher-card-code {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 2px;
+  }
+  .voucher-status-tag {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+  .voucher-status-tag.active {
+    background: rgba(0, 230, 118, 0.15);
+    color: var(--green);
+    border: 1px solid var(--green);
+  }
+  .voucher-status-tag.used {
+    background: rgba(255, 82, 82, 0.15);
+    color: var(--red);
+    border: 1px solid var(--red);
+  }
+  .voucher-card-details {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+  .voucher-card-details strong {
+    color: var(--white);
+    font-weight: 600;
+  }
+  .voucher-redeem-btn {
+    width: 100%;
+    margin-top: 14px;
+    background: var(--red);
+    color: var(--white);
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .voucher-redeem-btn:active { opacity: 0.8; }
+  .voucher-redeem-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .voucher-not-found {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    padding: 16px;
+    background: var(--surface-2);
+    border-radius: 10px;
+    border: 1px dashed var(--border);
+  }
+
   /* === TOAST === */
   .toast {
     position: fixed;
@@ -481,6 +598,16 @@
         </button>
       </div>
       <div class="status-updated" id="statusUpdated"></div>
+    </div>
+
+    <!-- VOUCHER REDEMPTION -->
+    <div class="panel">
+      <div class="panel-title">Redeem Voucher</div>
+      <div class="voucher-search-row">
+        <input type="text" id="voucherCodeInput" placeholder="Enter voucher code (e.g. ACT-K7M3NP)" maxlength="10" autocomplete="off">
+        <button class="voucher-search-btn" onclick="lookupVoucher()">Look Up</button>
+      </div>
+      <div class="voucher-result" id="voucherResult"></div>
     </div>
 
     <!-- PROMO LAUNCHER -->
@@ -836,6 +963,93 @@
     const list = document.getElementById('historyList');
     btn.classList.toggle('open');
     list.classList.toggle('show');
+  }
+
+  // =================================================================
+  // VOUCHER REDEMPTION
+  // =================================================================
+  let foundVoucherDocId = null;
+
+  // Allow Enter key to trigger lookup
+  document.getElementById('voucherCodeInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') lookupVoucher();
+  });
+
+  async function lookupVoucher() {
+    const input = document.getElementById('voucherCodeInput');
+    const code = input.value.trim().toUpperCase();
+    const resultDiv = document.getElementById('voucherResult');
+
+    if (!code) {
+      showToast('Enter a voucher code', 'error');
+      return;
+    }
+
+    resultDiv.innerHTML = '<div class="no-promos">Searching...</div>';
+    resultDiv.classList.add('show');
+    foundVoucherDocId = null;
+
+    try {
+      // Query vouchers collection by code
+      const snapshot = await db.collection('vouchers')
+        .where('code', '==', code)
+        .limit(1)
+        .get();
+
+      if (snapshot.empty) {
+        resultDiv.innerHTML = '<div class="voucher-not-found">No voucher found with that code</div>';
+        return;
+      }
+
+      const doc = snapshot.docs[0];
+      const v = doc.data();
+      foundVoucherDocId = doc.id;
+      const isUsed = v.used || false;
+      const createdDate = v.createdAt && v.createdAt.toDate
+        ? v.createdAt.toDate().toLocaleString('en-PH')
+        : '--';
+      const redeemedDate = v.redeemedAt && v.redeemedAt.toDate
+        ? v.redeemedAt.toDate().toLocaleString('en-PH')
+        : '';
+
+      resultDiv.innerHTML = `
+        <div class="voucher-card">
+          <div class="voucher-card-header">
+            <div class="voucher-card-code">${escapeHtml(v.code)}</div>
+            <span class="voucher-status-tag ${isUsed ? 'used' : 'active'}">${isUsed ? 'Used' : 'Active'}</span>
+          </div>
+          <div class="voucher-card-details">
+            <strong>Name:</strong> ${escapeHtml(v.userName || 'N/A')}<br>
+            <strong>Email:</strong> ${escapeHtml(v.userEmail || 'N/A')}<br>
+            <strong>Created:</strong> ${createdDate}
+            ${redeemedDate ? '<br><strong>Redeemed:</strong> ' + redeemedDate : ''}
+          </div>
+          ${!isUsed ? `<button class="voucher-redeem-btn" id="redeemBtn" onclick="redeemVoucher('${doc.id}')">Mark as Used</button>` : ''}
+        </div>`;
+    } catch (err) {
+      console.error('Voucher lookup error:', err);
+      resultDiv.innerHTML = '<div class="voucher-not-found">Error looking up voucher. Check Firestore rules.</div>';
+    }
+  }
+
+  async function redeemVoucher(docId) {
+    const btn = document.getElementById('redeemBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
+
+    try {
+      await db.collection('vouchers').doc(docId).update({
+        used: true,
+        redeemedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        redeemedBy: currentUser.uid
+      });
+      showToast('Voucher marked as used!', 'success');
+      // Refresh the result
+      lookupVoucher();
+    } catch (err) {
+      console.error('Redeem error:', err);
+      showToast('Failed to redeem voucher', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Mark as Used'; }
+    }
   }
 
   // =================================================================

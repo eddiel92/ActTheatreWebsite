@@ -1499,6 +1499,8 @@
   // =================================================================
   // WELCOME VOUCHER
   // =================================================================
+  let voucherUnsubscribe = null;
+
   async function checkWelcomeVoucher(user) {
     try {
       const voucherRef = db.collection('vouchers').doc(user.uid);
@@ -1515,13 +1517,17 @@
         savedVoucherUsed = false;
         showVoucherCard(code, false);
         showVoucherModal(user.displayName, code);
-      } else {
-        // Returning user — load existing voucher into card
-        const data = doc.data();
-        savedVoucherCode = data.code;
-        savedVoucherUsed = data.used || false;
-        showVoucherCard(data.code, savedVoucherUsed);
       }
+      // Listen for real-time updates (e.g. cashier marks voucher as used)
+      if (voucherUnsubscribe) voucherUnsubscribe();
+      voucherUnsubscribe = voucherRef.onSnapshot(snap => {
+        if (snap.exists) {
+          const data = snap.data();
+          savedVoucherCode = data.code;
+          savedVoucherUsed = data.used || false;
+          showVoucherCard(data.code, savedVoucherUsed);
+        }
+      });
     } catch (err) { console.error('Voucher check error:', err); }
   }
 
