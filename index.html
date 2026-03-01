@@ -651,6 +651,143 @@
   }
   .footer a { color: var(--accent); text-decoration: none; }
 
+  /* === VOUCHER MODAL === */
+  .voucher-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 500;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.3s ease;
+  }
+  .voucher-overlay.show { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .voucher-card {
+    background: var(--surface);
+    border: 2px solid var(--green);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 360px;
+    overflow: hidden;
+    animation: voucher-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 0 60px var(--green-glow), 0 20px 60px rgba(0,0,0,0.5);
+  }
+  @keyframes voucher-pop {
+    from { opacity: 0; transform: scale(0.8) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .voucher-top {
+    background: linear-gradient(135deg, #003d1a, #00363a);
+    padding: 28px 24px 20px;
+    text-align: center;
+  }
+  .voucher-badge {
+    display: inline-block;
+    background: var(--green);
+    color: var(--bg);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+  }
+  .voucher-amount {
+    font-family: var(--font-mono);
+    font-size: 56px;
+    font-weight: 700;
+    color: var(--green);
+    line-height: 1;
+    text-shadow: 0 0 40px var(--green-glow);
+  }
+  .voucher-amount-label {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--white);
+    margin-top: 4px;
+  }
+  .voucher-divider {
+    height: 2px;
+    background: repeating-linear-gradient(90deg, var(--border) 0, var(--border) 8px, transparent 8px, transparent 16px);
+    position: relative;
+  }
+  .voucher-divider::before,
+  .voucher-divider::after {
+    content: '';
+    position: absolute;
+    top: -12px;
+    width: 24px;
+    height: 24px;
+    background: rgba(0, 0, 0, 0.75);
+    border-radius: 50%;
+  }
+  .voucher-divider::before { left: -12px; }
+  .voucher-divider::after { right: -12px; }
+
+  .voucher-bottom {
+    padding: 20px 24px 24px;
+    text-align: center;
+  }
+  .voucher-greeting {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .voucher-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+  .voucher-code-box {
+    background: var(--bg);
+    border: 1px dashed var(--green);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+  .voucher-code-label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 4px;
+  }
+  .voucher-code {
+    font-family: var(--font-mono);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 3px;
+  }
+  .voucher-instructions {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 16px;
+    line-height: 1.4;
+  }
+  .voucher-ok-btn {
+    width: 100%;
+    background: var(--green);
+    color: var(--bg);
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .voucher-ok-btn:active { transform: scale(0.97); }
+
   /* === TOAST === */
   .toast {
     position: fixed;
@@ -928,6 +1065,28 @@
 
 </div>
 
+<!-- WELCOME VOUCHER MODAL -->
+<div class="voucher-overlay" id="voucherOverlay" onclick="if(event.target===this)closeVoucher()">
+  <div class="voucher-card">
+    <div class="voucher-top">
+      <div class="voucher-badge">Welcome Gift</div>
+      <div class="voucher-amount">1 HR</div>
+      <div class="voucher-amount-label">FREE PARKING</div>
+    </div>
+    <div class="voucher-divider"></div>
+    <div class="voucher-bottom">
+      <div class="voucher-greeting" id="voucherGreeting">Welcome!</div>
+      <div class="voucher-desc">Thanks for signing up! Here's your welcome voucher for 1 hour of free motorcycle parking at ACT Theater.</div>
+      <div class="voucher-code-box">
+        <div class="voucher-code-label">Your Voucher Code</div>
+        <div class="voucher-code" id="voucherCode">---</div>
+      </div>
+      <div class="voucher-instructions">Show this code to the parking attendant on your next visit. Valid for one-time use.</div>
+      <button class="voucher-ok-btn" onclick="closeVoucher()">Got It!</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -976,6 +1135,10 @@
     if (cta) cta.style.display = user ? 'none' : 'flex';
     if (user && activePromo) {
       checkUserClaim(activePromo.id);
+    }
+    // Check for welcome voucher
+    if (user) {
+      checkWelcomeVoucher(user);
     }
   });
 
@@ -1269,6 +1432,52 @@
       btn.disabled = false;
       btn.textContent = 'Claim';
     }
+  }
+
+  // =================================================================
+  // WELCOME VOUCHER
+  // =================================================================
+  async function checkWelcomeVoucher(user) {
+    try {
+      const voucherRef = db.collection('vouchers').doc(user.uid);
+      const doc = await voucherRef.get();
+
+      if (!doc.exists) {
+        // First-time user — generate voucher code and save
+        const code = generateVoucherCode();
+        await voucherRef.set({
+          code: code,
+          userId: user.uid,
+          userEmail: user.email || '',
+          userName: user.displayName || '',
+          used: false,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showVoucherModal(user.displayName, code);
+      }
+    } catch (err) {
+      console.error('Voucher check error:', err);
+    }
+  }
+
+  function generateVoucherCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = 'ACT-';
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  }
+
+  function showVoucherModal(name, code) {
+    const firstName = name ? name.split(' ')[0] : 'there';
+    document.getElementById('voucherGreeting').textContent = `Welcome, ${firstName}!`;
+    document.getElementById('voucherCode').textContent = code;
+    document.getElementById('voucherOverlay').classList.add('show');
+  }
+
+  function closeVoucher() {
+    document.getElementById('voucherOverlay').classList.remove('show');
   }
 
   // =================================================================

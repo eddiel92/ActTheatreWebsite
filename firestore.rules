@@ -37,6 +37,17 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ----- Vouchers (welcome voucher per user) -----
+    // Each user can create their own voucher doc (doc ID = their UID)
+    // Readable by the user themselves + admins
+    // Only created once, not editable by user after
+    match /vouchers/{userId} {
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
     // ----- Admin check -----
     // UPDATE THIS LIST with your admin email(s)
     function isAdmin() {
