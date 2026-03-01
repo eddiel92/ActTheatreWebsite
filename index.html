@@ -181,27 +181,22 @@
     text-align: left;
   }
   .user-menu button:hover { background: var(--surface-2); color: var(--white); }
-  .user-menu button.voucher-menu-btn { color: var(--green); }
-
   /* === MY VOUCHER CARD (persistent, shown when logged in) === */
   .my-voucher-card {
     background: linear-gradient(135deg, #003d1a, #00363a);
     border: 1px solid rgba(0, 230, 118, 0.25);
     margin: 12px;
-    border-radius: 12px;
-    padding: 14px 16px;
+    border-radius: 14px;
+    padding: 18px 16px;
     display: none;
-    cursor: pointer;
     animation: fadeSlideIn 0.5s ease-out;
-    transition: transform 0.15s;
   }
-  .my-voucher-card:active { transform: scale(0.98); }
   .my-voucher-card.show { display: block; }
   .my-voucher-top {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 6px;
+    margin-bottom: 12px;
   }
   .my-voucher-label {
     font-size: 10px;
@@ -226,41 +221,51 @@
     background: var(--muted);
     color: var(--bg);
   }
-  .my-voucher-main {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .my-voucher-info {
+  .my-voucher-offer {
     display: flex;
     align-items: center;
     gap: 10px;
+    margin-bottom: 12px;
   }
-  .my-voucher-icon {
-    font-size: 28px;
-  }
-  .my-voucher-detail {}
+  .my-voucher-icon { font-size: 28px; }
   .my-voucher-title {
     font-family: var(--font-mono);
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--green);
   }
   .my-voucher-subtitle {
-    font-size: 11px;
+    font-size: 12px;
     color: rgba(240, 244, 248, 0.6);
     margin-top: 1px;
   }
-  .my-voucher-code-display {
-    font-family: var(--font-mono);
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--white);
+  .my-voucher-code-box {
     background: rgba(0, 0, 0, 0.3);
-    padding: 6px 12px;
-    border-radius: 8px;
-    border: 1px dashed rgba(0, 230, 118, 0.3);
-    letter-spacing: 2px;
+    border: 1px dashed rgba(0, 230, 118, 0.4);
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .my-voucher-code-label {
+    font-size: 9px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 4px;
+  }
+  .my-voucher-code {
+    font-family: var(--font-mono);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 4px;
+  }
+  .my-voucher-instructions {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.4;
   }
 
   /* === PROMO BANNER === */
@@ -868,7 +873,6 @@
       </button>
     </div>
     <div class="user-menu" id="userMenu">
-      <button class="voucher-menu-btn" onclick="showMyVoucher()">My Voucher</button>
       <button onclick="handleLogout()">Sign Out</button>
     </div>
   </header>
@@ -884,21 +888,23 @@
   </div>
 
   <!-- MY VOUCHER CARD (visible when logged in) -->
-  <div class="my-voucher-card" id="myVoucherCard" onclick="showMyVoucher()">
+  <div class="my-voucher-card" id="myVoucherCard">
     <div class="my-voucher-top">
       <span class="my-voucher-label">Your Welcome Voucher</span>
       <span class="my-voucher-tag active" id="myVoucherTag">Active</span>
     </div>
-    <div class="my-voucher-main">
-      <div class="my-voucher-info">
-        <div class="my-voucher-icon">🎫</div>
-        <div class="my-voucher-detail">
-          <div class="my-voucher-title">1 HR FREE PARKING</div>
-          <div class="my-voucher-subtitle">Tap to show full voucher</div>
-        </div>
+    <div class="my-voucher-offer">
+      <div class="my-voucher-icon">🎫</div>
+      <div>
+        <div class="my-voucher-title">1 HOUR FREE PARKING</div>
+        <div class="my-voucher-subtitle">ACT Theater, Cubao</div>
       </div>
-      <div class="my-voucher-code-display" id="myVoucherCodeSmall">---</div>
     </div>
+    <div class="my-voucher-code-box">
+      <div class="my-voucher-code-label">Your Voucher Code</div>
+      <div class="my-voucher-code" id="myVoucherCodeSmall">---</div>
+    </div>
+    <div class="my-voucher-instructions">Show this code to the parking attendant. One-time use only.</div>
   </div>
 
   <!-- PROMO BANNER -->
@@ -1521,9 +1527,8 @@
 
   function showVoucherCard(code, used) {
     const card = document.getElementById('myVoucherCard');
-    const codeEl = document.getElementById('myVoucherCodeSmall');
+    document.getElementById('myVoucherCodeSmall').textContent = code;
     const tag = document.getElementById('myVoucherTag');
-    codeEl.textContent = code;
     if (used) {
       tag.textContent = 'Used';
       tag.className = 'my-voucher-tag used';
@@ -1532,18 +1537,6 @@
       tag.className = 'my-voucher-tag active';
     }
     card.classList.add('show');
-  }
-
-  function showMyVoucher() {
-    document.getElementById('userMenu').classList.remove('show');
-    if (savedVoucherCode) {
-      const firstName = currentUser && currentUser.displayName
-        ? currentUser.displayName.split(' ')[0] : 'there';
-      document.getElementById('voucherGreeting').textContent =
-        savedVoucherUsed ? `${firstName}, this voucher has been used` : `Welcome back, ${firstName}!`;
-      document.getElementById('voucherCode').textContent = savedVoucherCode;
-      document.getElementById('voucherOverlay').classList.add('show');
-    }
   }
 
   function generateVoucherCode() {
