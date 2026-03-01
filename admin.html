@@ -1199,8 +1199,8 @@
     try {
       await db.collection('vouchers').doc(docId).update({
         used: false,
-        redeemedAt: firebase.firestore.FieldValue.deleteField(),
-        redeemedBy: firebase.firestore.FieldValue.deleteField()
+        redeemedAt: firebase.firestore.FieldValue.delete(),
+        redeemedBy: firebase.firestore.FieldValue.delete()
       });
       showToast('Voucher reactivated!', 'success');
       lookupVoucher();
@@ -1310,8 +1310,8 @@
     try {
       await db.collection('vouchers').doc(docId).update({
         used: false,
-        redeemedAt: firebase.firestore.FieldValue.deleteField(),
-        redeemedBy: firebase.firestore.FieldValue.deleteField()
+        redeemedAt: firebase.firestore.FieldValue.delete(),
+        redeemedBy: firebase.firestore.FieldValue.delete()
       });
       showToast('Voucher reactivated!', 'success');
     } catch (err) {
