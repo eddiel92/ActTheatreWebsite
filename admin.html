@@ -506,6 +506,128 @@
     border: 1px dashed var(--border);
   }
 
+  /* === USERS & VOUCHERS LIST === */
+  .voucher-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .voucher-count {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .voucher-count strong {
+    color: var(--green);
+  }
+  .voucher-filter-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .filter-btn {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .filter-btn.selected {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0, 188, 212, 0.08);
+  }
+  .user-voucher-item {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .user-voucher-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .user-voucher-name {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .user-voucher-email {
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .user-voucher-meta {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+  }
+  .user-voucher-code {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+  .user-voucher-date {
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .user-voucher-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .mark-used-btn {
+    background: none;
+    border: 1px solid var(--green);
+    color: var(--green);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .mark-used-btn:hover { background: rgba(0, 230, 118, 0.1); }
+  .used-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--red);
+    padding: 4px 10px;
+    background: rgba(255, 82, 82, 0.1);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 82, 82, 0.3);
+  }
+  .active-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--green);
+  }
+
   /* === TOAST === */
   .toast {
     position: fixed;
@@ -608,6 +730,22 @@
         <button class="voucher-search-btn" onclick="lookupVoucher()">Look Up</button>
       </div>
       <div class="voucher-result" id="voucherResult"></div>
+    </div>
+
+    <!-- USERS & VOUCHERS -->
+    <div class="panel">
+      <div class="voucher-list-header">
+        <div class="panel-title" style="margin-bottom:0">Users &amp; Vouchers</div>
+        <div class="voucher-count" id="voucherCount"></div>
+      </div>
+      <div class="voucher-filter-row">
+        <button class="filter-btn selected" data-filter="all" onclick="filterVouchers('all')">All</button>
+        <button class="filter-btn" data-filter="active" onclick="filterVouchers('active')">Active</button>
+        <button class="filter-btn" data-filter="used" onclick="filterVouchers('used')">Used</button>
+      </div>
+      <div id="vouchersList">
+        <div class="no-promos">Loading vouchers...</div>
+      </div>
     </div>
 
     <!-- PROMO LAUNCHER -->
@@ -723,6 +861,7 @@
 
       // Start listeners
       listenToStatus();
+      listenToVouchers();
       listenToActivePromos();
       listenToPromoHistory();
 
@@ -1049,6 +1188,100 @@
       console.error('Redeem error:', err);
       showToast('Failed to redeem voucher', 'error');
       if (btn) { btn.disabled = false; btn.textContent = 'Mark as Used'; }
+    }
+  }
+
+  // =================================================================
+  // USERS & VOUCHERS LIST
+  // =================================================================
+  let allVouchers = [];
+  let voucherFilter = 'all';
+
+  function listenToVouchers() {
+    db.collection('vouchers')
+      .orderBy('createdAt', 'desc')
+      .onSnapshot(snapshot => {
+        allVouchers = [];
+        snapshot.forEach(doc => {
+          allVouchers.push({ id: doc.id, ...doc.data() });
+        });
+        renderVouchersList();
+      }, err => {
+        console.error('Vouchers listener error:', err);
+        document.getElementById('vouchersList').innerHTML =
+          '<div class="no-promos">Error loading vouchers. Check Firestore rules.</div>';
+      });
+  }
+
+  function filterVouchers(filter) {
+    voucherFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.classList.toggle('selected', btn.dataset.filter === filter);
+    });
+    renderVouchersList();
+  }
+
+  function renderVouchersList() {
+    const container = document.getElementById('vouchersList');
+    const countEl = document.getElementById('voucherCount');
+
+    let filtered = allVouchers;
+    if (voucherFilter === 'active') {
+      filtered = allVouchers.filter(v => !v.used);
+    } else if (voucherFilter === 'used') {
+      filtered = allVouchers.filter(v => v.used);
+    }
+
+    const totalActive = allVouchers.filter(v => !v.used).length;
+    const totalUsed = allVouchers.filter(v => v.used).length;
+    countEl.innerHTML = `<strong>${allVouchers.length}</strong> total &middot; ${totalActive} active &middot; ${totalUsed} used`;
+
+    if (filtered.length === 0) {
+      container.innerHTML = '<div class="no-promos">No vouchers found</div>';
+      return;
+    }
+
+    let html = '';
+    filtered.forEach(v => {
+      const isUsed = v.used || false;
+      const createdDate = v.createdAt && v.createdAt.toDate
+        ? v.createdAt.toDate().toLocaleDateString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : '';
+
+      html += `
+        <div class="user-voucher-item">
+          <div class="user-voucher-info">
+            <div class="user-voucher-name">${escapeHtml(v.userName || 'Unknown')}</div>
+            <div class="user-voucher-email">${escapeHtml(v.userEmail || 'No email')}</div>
+            <div class="user-voucher-meta">
+              <span class="user-voucher-code">${escapeHtml(v.code || '---')}</span>
+              <span class="user-voucher-date">&middot; ${createdDate}</span>
+            </div>
+          </div>
+          <div class="user-voucher-right">
+            ${isUsed
+              ? '<span class="used-label">Used</span>'
+              : `<button class="mark-used-btn" onclick="markVoucherUsed('${v.id}', this)">Mark Used</button>`}
+          </div>
+        </div>`;
+    });
+
+    container.innerHTML = html;
+  }
+
+  async function markVoucherUsed(docId, btn) {
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+    try {
+      await db.collection('vouchers').doc(docId).update({
+        used: true,
+        redeemedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        redeemedBy: currentUser.uid
+      });
+      showToast('Voucher marked as used!', 'success');
+    } catch (err) {
+      console.error('Mark used error:', err);
+      showToast('Failed to update voucher', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Mark Used'; }
     }
   }
 
