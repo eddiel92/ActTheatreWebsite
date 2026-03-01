@@ -3,9 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>ACT Live Parking — Cubao Motorcycle Parking</title>
+<title>Cubao Motorcycle Parking — Live Availability</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
   :root {
     --bg: #0a0e13;
@@ -62,13 +63,13 @@
     display: flex; align-items: center; justify-content: center;
     font-family: var(--font-mono);
     font-weight: 700;
-    font-size: 14px;
+    font-size: 10px;
     color: var(--bg);
-    letter-spacing: -1px;
+    letter-spacing: -0.5px;
   }
   .header-title {
     font-family: var(--font-mono);
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.5px;
   }
@@ -108,9 +109,7 @@
   }
   .signin-cta:active { transform: scale(0.98); }
   .signin-cta-icon { font-size: 24px; flex-shrink: 0; }
-  .signin-cta-text {
-    flex: 1;
-  }
+  .signin-cta-text { flex: 1; }
   .signin-cta-title {
     font-family: var(--font-mono);
     font-size: 13px;
@@ -223,9 +222,6 @@
     font-family: var(--font-mono);
     font-size: 12px;
     color: var(--amber);
-    display: flex;
-    align-items: center;
-    gap: 5px;
   }
   .promo-claims {
     font-size: 11px;
@@ -245,144 +241,211 @@
     flex-shrink: 0;
   }
   .promo-claim-btn:active { transform: scale(0.95); }
-  .promo-claim-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+  .promo-claim-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .promo-claim-btn.claimed {
     background: var(--surface-2);
     color: var(--green);
     border: 1px solid var(--green);
   }
 
-  /* === AVAILABILITY HERO === */
-  .slot-hero {
+  /* === MAP SECTION === */
+  .map-section {
     margin: 8px 12px 16px;
-    padding: 28px 20px 24px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
     animation: fadeSlideIn 0.4s ease-out;
   }
-  .slot-hero::before {
-    content: '';
-    position: absolute;
-    top: -60%; left: -20%; right: -20%;
-    height: 120%;
-    background: radial-gradient(ellipse at center, var(--green-glow) 0%, transparent 70%);
-    opacity: 0.35;
-    pointer-events: none;
-    transition: background 0.5s;
-  }
-  .slot-hero.status-few::before {
-    background: radial-gradient(ellipse at center, var(--amber-glow) 0%, transparent 70%);
-  }
-  .slot-hero.status-full::before {
-    background: radial-gradient(ellipse at center, var(--red-glow) 0%, transparent 70%);
-  }
-  .slot-label {
+  .map-label {
+    font-family: var(--font-mono);
     font-size: 12px;
     text-transform: uppercase;
-    letter-spacing: 2.5px;
+    letter-spacing: 2px;
     color: var(--muted);
-    font-weight: 600;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
+    padding-left: 2px;
+  }
+  .map-wrap {
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--border);
     position: relative;
   }
-  .status-text {
+  #parkingMap {
+    height: 280px;
+    width: 100%;
+    background: var(--surface);
+  }
+  /* Leaflet dark overrides */
+  .leaflet-control-zoom a {
+    background: var(--surface) !important;
+    color: var(--white) !important;
+    border-color: var(--border) !important;
+  }
+  .leaflet-control-attribution {
+    background: rgba(10, 14, 19, 0.8) !important;
+    color: var(--muted) !important;
+    font-size: 9px !important;
+  }
+  .leaflet-control-attribution a { color: var(--accent) !important; }
+
+  /* Map markers */
+  .map-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    white-space: nowrap;
+  }
+  .marker-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 3px solid var(--white);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    margin-bottom: 4px;
+  }
+  .marker-dot.green { background: var(--green); box-shadow: 0 0 12px var(--green-glow), 0 2px 8px rgba(0,0,0,0.5); }
+  .marker-dot.yellow { background: var(--amber); box-shadow: 0 0 12px var(--amber-glow), 0 2px 8px rgba(0,0,0,0.5); }
+  .marker-dot.red { background: var(--red); box-shadow: 0 0 12px var(--red-glow), 0 2px 8px rgba(0,0,0,0.5); }
+  .marker-dot.act {
+    width: 26px;
+    height: 26px;
+    border-width: 3px;
+    animation: marker-pulse 2s ease-in-out infinite;
+  }
+  @keyframes marker-pulse {
+    0%, 100% { box-shadow: 0 0 12px var(--green-glow), 0 2px 8px rgba(0,0,0,0.5); }
+    50% { box-shadow: 0 0 24px var(--green-glow), 0 0 40px var(--green-glow), 0 2px 8px rgba(0,0,0,0.5); }
+  }
+  .marker-label {
     font-family: var(--font-mono);
-    font-size: 48px;
+    font-size: 10px;
     font-weight: 700;
-    line-height: 1;
-    color: var(--green);
-    position: relative;
-    text-shadow: 0 0 40px var(--green-glow);
-    transition: color 0.3s, text-shadow 0.3s;
+    color: var(--white);
+    background: rgba(10, 14, 19, 0.85);
+    padding: 3px 8px;
+    border-radius: 6px;
+    text-align: center;
+    backdrop-filter: blur(4px);
   }
-  .slot-hero.status-few .status-text {
-    color: var(--amber);
-    text-shadow: 0 0 40px var(--amber-glow);
+  .marker-label.act-label {
+    background: var(--green);
+    color: var(--bg);
+    font-size: 11px;
+    padding: 4px 10px;
   }
-  .slot-hero.status-full .status-text {
-    color: var(--red);
-    text-shadow: 0 0 40px var(--red-glow);
+  .marker-status {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 2px;
   }
-  .status-subtitle {
-    font-size: 14px;
-    color: var(--muted);
-    margin-top: 8px;
-    position: relative;
-  }
-  .slot-meta {
+
+  /* Map legend below map */
+  .map-legend {
     display: flex;
     justify-content: center;
-    gap: 20px;
-    margin-top: 16px;
-    position: relative;
-  }
-  .slot-meta-item {
-    font-size: 12px;
+    gap: 16px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 14px 14px;
+    font-size: 11px;
     color: var(--muted);
+  }
+  .legend-item {
     display: flex;
     align-items: center;
     gap: 5px;
   }
-  .slot-meta-item svg { width: 14px; height: 14px; stroke: var(--muted); fill: none; stroke-width: 2; }
-
-  .loading-shimmer {
-    background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 8px;
-    display: inline-block;
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
   }
-  @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
+  .legend-dot.green { background: var(--green); }
+  .legend-dot.yellow { background: var(--amber); }
+  .legend-dot.red { background: var(--red); }
 
-  /* === STATUS STRIP === */
-  .status-strip {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+  /* === PARKING CARDS (below map) === */
+  .parking-cards {
+    display: flex;
+    flex-direction: column;
     gap: 8px;
     margin: 0 12px 16px;
   }
-  .status-card {
+  .parking-card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
     animation: fadeSlideIn 0.5s ease-out both;
   }
-  .status-card:nth-child(2) { animation-delay: 0.08s; }
-  .status-card-label {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--muted);
-    margin-bottom: 6px;
+  .parking-card.act-card {
+    border-color: rgba(0, 230, 118, 0.3);
+    background: rgba(0, 230, 118, 0.04);
   }
-  .status-card-value {
-    font-family: var(--font-mono);
-    font-size: 18px;
+  .parking-card:nth-child(2) { animation-delay: 0.06s; }
+  .parking-card:nth-child(3) { animation-delay: 0.12s; }
+
+  .parking-card-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .parking-card-dot.green { background: var(--green); box-shadow: 0 0 8px var(--green-glow); }
+  .parking-card-dot.yellow { background: var(--amber); box-shadow: 0 0 8px var(--amber-glow); }
+  .parking-card-dot.red { background: var(--red); box-shadow: 0 0 8px var(--red-glow); }
+
+  .parking-card-info { flex: 1; }
+  .parking-card-name {
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .parking-card-tag {
+    font-size: 8px;
+    background: var(--green);
+    color: var(--bg);
+    padding: 2px 6px;
+    border-radius: 4px;
     font-weight: 700;
-    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
-  .status-card-value.amber { color: var(--amber); }
-  .status-card-value.red { color: var(--red); }
+  .parking-card-detail {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .parking-card-status {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .parking-card-status.green { color: var(--green); }
+  .parking-card-status.yellow { color: var(--amber); }
+  .parking-card-status.red { color: var(--red); }
+  .parking-card-type {
+    font-size: 9px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: right;
+    margin-top: 2px;
+  }
 
   /* === SECTIONS === */
   .section {
     margin: 0 12px 16px;
     animation: fadeSlideIn 0.5s ease-out both;
   }
-  .section:nth-child(5) { animation-delay: 0.1s; }
-  .section:nth-child(6) { animation-delay: 0.15s; }
-  .section:nth-child(7) { animation-delay: 0.2s; }
 
   .section-header {
     font-family: var(--font-mono);
@@ -422,9 +485,7 @@
     font-size: 14px;
     color: var(--muted);
   }
-  .rate-details {
-    padding: 0 16px 16px;
-  }
+  .rate-details { padding: 0 16px 16px; }
   .rate-detail-row {
     display: flex;
     justify-content: space-between;
@@ -452,11 +513,7 @@
     gap: 6px;
   }
   .calc-title svg { width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 2; }
-  .calc-row {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
+  .calc-row { display: flex; gap: 10px; margin-bottom: 10px; }
   .calc-field { flex: 1; }
   .calc-field label {
     display: block;
@@ -466,7 +523,7 @@
     letter-spacing: 1px;
     margin-bottom: 6px;
   }
-  .calc-field input, .calc-field select {
+  .calc-field select {
     width: 100%;
     background: var(--bg);
     border: 1px solid var(--border);
@@ -478,7 +535,7 @@
     outline: none;
     transition: border-color 0.2s;
   }
-  .calc-field input:focus, .calc-field select:focus { border-color: var(--accent); }
+  .calc-field select:focus { border-color: var(--accent); }
   .calc-result {
     background: rgba(0, 188, 212, 0.08);
     border: 1px solid rgba(0, 188, 212, 0.2);
@@ -499,92 +556,6 @@
     font-weight: 700;
     color: var(--white);
     margin-top: 2px;
-  }
-
-  /* === COMPETITOR COMPARISON === */
-  .comp-table {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    overflow: hidden;
-  }
-  .comp-row {
-    display: grid;
-    grid-template-columns: 1fr auto auto auto;
-    gap: 8px;
-    padding: 14px 14px;
-    align-items: center;
-    border-bottom: 1px solid var(--border);
-  }
-  .comp-row:last-child { border-bottom: none; }
-  .comp-row.is-act { background: rgba(0, 230, 118, 0.04); }
-  .comp-name {
-    font-size: 14px;
-    font-weight: 600;
-  }
-  .comp-name .comp-tag {
-    display: inline-block;
-    font-size: 9px;
-    background: var(--green);
-    color: var(--bg);
-    padding: 2px 6px;
-    border-radius: 4px;
-    margin-left: 6px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    vertical-align: middle;
-  }
-  .comp-rate {
-    font-family: var(--font-mono);
-    font-size: 14px;
-    font-weight: 700;
-    text-align: right;
-    white-space: nowrap;
-  }
-  .comp-hours {
-    font-size: 11px;
-    color: var(--muted);
-    text-align: right;
-    white-space: nowrap;
-  }
-  .comp-busy {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .busy-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-  }
-  .busy-dot.green { background: var(--green); box-shadow: 0 0 6px var(--green-glow); }
-  .busy-dot.yellow { background: var(--amber); box-shadow: 0 0 6px var(--amber-glow); }
-  .busy-dot.red { background: var(--red); box-shadow: 0 0 6px var(--red-glow); }
-  .comp-note {
-    grid-column: 1 / -1;
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: -4px;
-  }
-  .comp-row.is-act .comp-rate { color: var(--green); }
-  .comp-header {
-    display: grid;
-    grid-template-columns: 1fr auto auto auto;
-    gap: 8px;
-    padding: 10px 14px 8px;
-    border-bottom: 1px solid var(--border);
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--muted);
-  }
-  .comp-footer {
-    padding: 8px 14px;
-    font-size: 10px;
-    color: var(--muted);
-    border-top: 1px solid var(--border);
-    text-align: center;
   }
 
   /* === DIRECTIONS === */
@@ -618,12 +589,7 @@
   .dir-info { flex: 1; }
   .dir-name { font-size: 14px; font-weight: 600; }
   .dir-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .dir-arrow {
-    width: 20px; height: 20px;
-    stroke: var(--muted);
-    fill: none;
-    stroke-width: 2;
-  }
+  .dir-arrow { width: 20px; height: 20px; stroke: var(--muted); fill: none; stroke-width: 2; }
 
   /* === FEATURES LIST === */
   .features-grid {
@@ -665,7 +631,6 @@
   }
   .voucher-overlay.show { display: flex; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
   .voucher-card {
     background: var(--surface);
     border: 2px solid var(--green);
@@ -680,7 +645,6 @@
     from { opacity: 0; transform: scale(0.8) translateY(20px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
   }
-
   .voucher-top {
     background: linear-gradient(135deg, #003d1a, #00363a);
     padding: 28px 24px 20px;
@@ -730,22 +694,9 @@
   }
   .voucher-divider::before { left: -12px; }
   .voucher-divider::after { right: -12px; }
-
-  .voucher-bottom {
-    padding: 20px 24px 24px;
-    text-align: center;
-  }
-  .voucher-greeting {
-    font-size: 15px;
-    font-weight: 600;
-    margin-bottom: 4px;
-  }
-  .voucher-desc {
-    font-size: 13px;
-    color: var(--muted);
-    line-height: 1.5;
-    margin-bottom: 16px;
-  }
+  .voucher-bottom { padding: 20px 24px 24px; text-align: center; }
+  .voucher-greeting { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .voucher-desc { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 16px; }
   .voucher-code-box {
     background: var(--bg);
     border: 1px dashed var(--green);
@@ -753,26 +704,9 @@
     padding: 12px;
     margin-bottom: 16px;
   }
-  .voucher-code-label {
-    font-size: 10px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    margin-bottom: 4px;
-  }
-  .voucher-code {
-    font-family: var(--font-mono);
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--green);
-    letter-spacing: 3px;
-  }
-  .voucher-instructions {
-    font-size: 11px;
-    color: var(--muted);
-    margin-bottom: 16px;
-    line-height: 1.4;
-  }
+  .voucher-code-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; }
+  .voucher-code { font-family: var(--font-mono); font-size: 24px; font-weight: 700; color: var(--green); letter-spacing: 3px; }
+  .voucher-instructions { font-size: 11px; color: var(--muted); margin-bottom: 16px; line-height: 1.4; }
   .voucher-ok-btn {
     width: 100%;
     background: var(--green);
@@ -808,10 +742,7 @@
     text-align: center;
     box-shadow: 0 8px 32px rgba(0,0,0,0.5);
   }
-  .toast.show {
-    transform: translateX(-50%) translateY(0);
-    opacity: 1;
-  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
   .toast.success { border-color: var(--green); color: var(--green); }
   .toast.error { border-color: var(--red); color: var(--red); }
 
@@ -821,7 +752,6 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
-  /* === SCROLLBAR === */
   ::-webkit-scrollbar { width: 0; }
 
   /* === DESKTOP CAP === */
@@ -847,8 +777,8 @@
   <!-- HEADER -->
   <header class="header">
     <div class="header-left">
-      <div class="logo-mark">ACT</div>
-      <div class="header-title"><span>ACT</span> PARKING</div>
+      <div class="logo-mark">CMP</div>
+      <div class="header-title"><span>CUBAO</span> MOTO PARKING</div>
     </div>
     <div id="authArea">
       <button class="login-btn" id="loginBtn" onclick="handleLogin()">
@@ -861,12 +791,12 @@
     </div>
   </header>
 
-  <!-- SIGN-IN CTA (shown when not logged in) -->
+  <!-- SIGN-IN CTA -->
   <div class="signin-cta" id="signinCta" onclick="handleLogin()">
     <div class="signin-cta-icon">🎁</div>
     <div class="signin-cta-text">
-      <div class="signin-cta-title">UNLOCK EXCLUSIVE PROMOS</div>
-      <div class="signin-cta-desc">Sign in with Google to claim free parking offers and discounts</div>
+      <div class="signin-cta-title">GET 1 HOUR FREE PARKING</div>
+      <div class="signin-cta-desc">Sign in with Google to claim your welcome voucher</div>
     </div>
     <div class="signin-cta-arrow">›</div>
   </div>
@@ -887,40 +817,59 @@
     </div>
   </div>
 
-  <!-- AVAILABILITY HERO -->
-  <div class="slot-hero" id="slotHero">
-    <div class="slot-label">Parking Status</div>
-    <div class="status-text" id="statusDisplay">
-      <span class="loading-shimmer" style="width: 200px; height: 48px;">&nbsp;</span>
+  <!-- PARKING MAP -->
+  <div class="map-section">
+    <div class="map-label">Cubao Parking Availability</div>
+    <div class="map-wrap">
+      <div id="parkingMap"></div>
     </div>
-    <div class="status-subtitle" id="statusSubtitle">Checking availability...</div>
-    <div class="slot-meta">
-      <div class="slot-meta-item">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        Updated <span id="updateTime">--</span>
-      </div>
-      <div class="slot-meta-item">
-        <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 6v6l4 2" stroke="var(--bg)" stroke-width="0"/><circle cx="12" cy="12" r="3" fill="var(--muted)"/></svg>
-        Open 24/7
-      </div>
+    <div class="map-legend">
+      <div class="legend-item"><div class="legend-dot green"></div> Available</div>
+      <div class="legend-item"><div class="legend-dot yellow"></div> Few Slots</div>
+      <div class="legend-item"><div class="legend-dot red"></div> Full</div>
     </div>
   </div>
 
-  <!-- STATUS STRIP -->
-  <div class="status-strip">
-    <div class="status-card">
-      <div class="status-card-label">Status</div>
-      <div class="status-card-value" id="statusText">--</div>
+  <!-- PARKING STATUS CARDS -->
+  <div class="parking-cards">
+    <div class="parking-card act-card">
+      <div class="parking-card-dot green" id="actCardDot"></div>
+      <div class="parking-card-info">
+        <div class="parking-card-name">ACT Theater <span class="parking-card-tag">LIVE</span></div>
+        <div class="parking-card-detail">₱30 / 3hrs · 24/7 · Aurora Blvd</div>
+      </div>
+      <div>
+        <div class="parking-card-status green" id="actCardStatus">AVAILABLE</div>
+        <div class="parking-card-type">Live</div>
+      </div>
     </div>
-    <div class="status-card">
-      <div class="status-card-label">Last Updated</div>
-      <div class="status-card-value amber" id="lastUpdated">--</div>
+    <div class="parking-card">
+      <div class="parking-card-dot yellow" id="puregoldCardDot"></div>
+      <div class="parking-card-info">
+        <div class="parking-card-name">Puregold Cubao</div>
+        <div class="parking-card-detail">₱20 / 3hrs · til 8:30pm</div>
+      </div>
+      <div>
+        <div class="parking-card-status yellow" id="puregoldCardStatus">FEW SLOTS</div>
+        <div class="parking-card-type">Estimated</div>
+      </div>
+    </div>
+    <div class="parking-card">
+      <div class="parking-card-dot yellow" id="aranetaCardDot"></div>
+      <div class="parking-card-info">
+        <div class="parking-card-name">Araneta Coliseum</div>
+        <div class="parking-card-detail">₱50 / 3hrs · 6am–12am</div>
+      </div>
+      <div>
+        <div class="parking-card-status yellow" id="aranetaCardStatus">FEW SLOTS</div>
+        <div class="parking-card-type">Estimated</div>
+      </div>
     </div>
   </div>
 
   <!-- RATE CARD -->
   <div class="section">
-    <div class="section-header">Motorcycle Rates</div>
+    <div class="section-header">ACT Theater Rates</div>
     <div class="rate-card">
       <div class="rate-main">
         <span class="rate-currency">₱</span>
@@ -941,8 +890,6 @@
           <span class="value">₱1,500</span>
         </div>
       </div>
-
-      <!-- CALCULATOR -->
       <div class="calc-box">
         <div class="calc-title">
           <svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg>
@@ -969,42 +916,6 @@
           <div class="calc-result-label">Estimated Fee</div>
           <div class="calc-result-amount" id="calcResult">₱30</div>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- COMPETITOR COMPARISON -->
-  <div class="section">
-    <div class="section-header">Compare Nearby Parking</div>
-    <div class="comp-table">
-      <div class="comp-header">
-        <span>Location</span>
-        <span style="text-align:right">First 3h</span>
-        <span style="text-align:right">Hours</span>
-        <span style="text-align:center">Busy</span>
-      </div>
-      <div class="comp-row is-act">
-        <div class="comp-name">ACT Theater <span class="comp-tag">Live</span></div>
-        <div class="comp-rate">₱30</div>
-        <div class="comp-hours">24/7</div>
-        <div class="comp-busy"><div class="busy-dot" id="actBusyDot"></div></div>
-      </div>
-      <div class="comp-row">
-        <div class="comp-name">Puregold Cubao</div>
-        <div class="comp-rate">₱20</div>
-        <div class="comp-hours">til 8:30pm</div>
-        <div class="comp-busy"><div class="busy-dot yellow"></div></div>
-        <div class="comp-note">⚠️ Closes early — often full by 2PM on weekdays</div>
-      </div>
-      <div class="comp-row">
-        <div class="comp-name">Araneta Coliseum</div>
-        <div class="comp-rate">₱50</div>
-        <div class="comp-hours">6am–12am</div>
-        <div class="comp-busy"><div class="busy-dot yellow"></div></div>
-        <div class="comp-note">Covered area fills up fast during events</div>
-      </div>
-      <div class="comp-footer">
-        ACT busyness is live · Competitor data is estimated · Rates last verified: Feb 27, 2026
       </div>
     </div>
   </div>
@@ -1057,10 +968,10 @@
 
   <!-- FOOTER -->
   <div class="footer">
-    <strong>ACT Theater Motorcycle Parking</strong><br>
-    Aurora Blvd cor. EDSA, Cubao, Quezon City<br><br>
+    <strong>Cubao Motorcycle Parking</strong><br>
+    ACT Theater, Aurora Blvd cor. EDSA, Cubao, Quezon City<br><br>
     Questions? <a href="tel:+639XXXXXXXXX">Call Us</a> · <a href="#">Report an Issue</a><br><br>
-    © 2026 ACT Parking · All rights reserved
+    © 2026 Cubao Motorcycle Parking · All rights reserved
   </div>
 
 </div>
@@ -1090,17 +1001,17 @@
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<!-- =============================================
-     FIREBASE SDK (v9 compat via CDN)
-     ============================================= -->
+<!-- LEAFLET JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- FIREBASE SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <script>
   // =================================================================
-  // FIREBASE CONFIG — Replace with your project's config
-  // Go to: Firebase Console → Project Settings → Your Apps → Config
+  // FIREBASE CONFIG
   // =================================================================
   const firebaseConfig = {
     apiKey: "AIzaSyC-8ZRihLeXm-LJC2DIyvNUPUaz_3FyfD8",
@@ -1123,6 +1034,148 @@
   let activePromo = null;
   let userHasClaimed = false;
   let countdownInterval = null;
+  let actStatus = 'available';
+
+  // Parking locations
+  const LOCATIONS = {
+    act:      { lat: 14.62079, lng: 121.05568, name: 'ACT Theater' },
+    puregold: { lat: 14.62209, lng: 121.05290, name: 'Puregold Cubao' },
+    araneta:  { lat: 14.62017, lng: 121.05350, name: 'Araneta Coliseum' }
+  };
+
+  // =================================================================
+  // MAP SETUP
+  // =================================================================
+  const map = L.map('parkingMap', {
+    center: [14.6210, 121.0545],
+    zoom: 16,
+    zoomControl: true,
+    attributionControl: true
+  });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 19
+  }).addTo(map);
+
+  // Create custom markers
+  function createMarkerIcon(colorClass, isAct) {
+    const dotClass = isAct ? `marker-dot ${colorClass} act` : `marker-dot ${colorClass}`;
+    return L.divIcon({
+      className: 'map-marker',
+      html: `<div class="${dotClass}"></div>`,
+      iconSize: [isAct ? 26 : 20, isAct ? 26 : 20],
+      iconAnchor: [isAct ? 13 : 10, isAct ? 13 : 10]
+    });
+  }
+
+  const statusToColor = { available: 'green', few: 'yellow', full: 'red' };
+  const statusToLabel = { available: 'AVAILABLE', few: 'FEW SLOTS', full: 'FULL' };
+
+  // ACT marker
+  const actMarker = L.marker([LOCATIONS.act.lat, LOCATIONS.act.lng], {
+    icon: createMarkerIcon('green', true)
+  }).addTo(map);
+  actMarker.bindTooltip('ACT Theater', {
+    permanent: true,
+    direction: 'top',
+    offset: [0, -16],
+    className: 'marker-tooltip-act'
+  });
+
+  // Competitor markers
+  const puregoldMarker = L.marker([LOCATIONS.puregold.lat, LOCATIONS.puregold.lng], {
+    icon: createMarkerIcon('yellow', false)
+  }).addTo(map);
+  puregoldMarker.bindTooltip('Puregold', {
+    permanent: true,
+    direction: 'top',
+    offset: [0, -12],
+    className: 'marker-tooltip'
+  });
+
+  const aranetaMarker = L.marker([LOCATIONS.araneta.lat, LOCATIONS.araneta.lng], {
+    icon: createMarkerIcon('yellow', false)
+  }).addTo(map);
+  aranetaMarker.bindTooltip('Araneta', {
+    permanent: true,
+    direction: 'top',
+    offset: [0, -12],
+    className: 'marker-tooltip'
+  });
+
+  // Style tooltips
+  const tooltipStyle = document.createElement('style');
+  tooltipStyle.textContent = `
+    .marker-tooltip-act {
+      background: var(--green) !important;
+      color: var(--bg) !important;
+      border: none !important;
+      font-family: var(--font-mono) !important;
+      font-size: 10px !important;
+      font-weight: 700 !important;
+      padding: 3px 8px !important;
+      border-radius: 6px !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+    }
+    .marker-tooltip-act::before { border-top-color: var(--green) !important; }
+    .marker-tooltip {
+      background: rgba(10, 14, 19, 0.9) !important;
+      color: var(--white) !important;
+      border: 1px solid var(--border) !important;
+      font-family: var(--font-mono) !important;
+      font-size: 10px !important;
+      font-weight: 700 !important;
+      padding: 3px 8px !important;
+      border-radius: 6px !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+    }
+    .marker-tooltip::before { border-top-color: rgba(10, 14, 19, 0.9) !important; }
+  `;
+  document.head.appendChild(tooltipStyle);
+
+  // =================================================================
+  // COMPETITOR OSCILLATION
+  // =================================================================
+  const compStatuses = ['available', 'few', 'full'];
+  let puregoldIdx = 1; // start at 'few'
+  let aranetaIdx = 1;
+
+  function oscillateCompetitors() {
+    // Random walk — each competitor shifts up/down or stays
+    const pDelta = Math.random() < 0.4 ? (Math.random() < 0.5 ? -1 : 1) : 0;
+    const aDelta = Math.random() < 0.4 ? (Math.random() < 0.5 ? -1 : 1) : 0;
+
+    puregoldIdx = Math.max(0, Math.min(2, puregoldIdx + pDelta));
+    aranetaIdx = Math.max(0, Math.min(2, aranetaIdx + aDelta));
+
+    const pStatus = compStatuses[puregoldIdx];
+    const aStatus = compStatuses[aranetaIdx];
+    const pColor = statusToColor[pStatus];
+    const aColor = statusToColor[aStatus];
+
+    // Update map markers
+    puregoldMarker.setIcon(createMarkerIcon(pColor, false));
+    aranetaMarker.setIcon(createMarkerIcon(aColor, false));
+
+    // Update cards
+    updateCompCard('puregold', pColor, statusToLabel[pStatus]);
+    updateCompCard('araneta', aColor, statusToLabel[aStatus]);
+  }
+
+  function updateCompCard(id, color, label) {
+    const dot = document.getElementById(id + 'CardDot');
+    const status = document.getElementById(id + 'CardStatus');
+    dot.className = 'parking-card-dot ' + color;
+    status.className = 'parking-card-status ' + color;
+    status.textContent = label;
+  }
+
+  // Oscillate every 20-40 seconds
+  setInterval(oscillateCompetitors, 25000);
+  // Initial random offset
+  setTimeout(oscillateCompetitors, 3000);
 
   // =================================================================
   // AUTH
@@ -1130,13 +1183,11 @@
   auth.onAuthStateChanged(user => {
     currentUser = user;
     renderAuthUI();
-    // Show/hide sign-in CTA
     const cta = document.getElementById('signinCta');
     if (cta) cta.style.display = user ? 'none' : 'flex';
     if (user && activePromo) {
       checkUserClaim(activePromo.id);
     }
-    // Check for welcome voucher
     if (user) {
       checkWelcomeVoucher(user);
     }
@@ -1176,7 +1227,6 @@
     document.getElementById('userMenu').classList.toggle('show');
   }
 
-  // Close menu on outside click
   document.addEventListener('click', e => {
     const menu = document.getElementById('userMenu');
     const pill = document.querySelector('.user-pill');
@@ -1186,63 +1236,38 @@
   });
 
   // =================================================================
-  // AVAILABILITY — Real-time listener
+  // AVAILABILITY — Real-time from Firestore
   // =================================================================
   db.collection('config').doc('parking').onSnapshot(doc => {
     if (doc.exists) {
       const data = doc.data();
-      updateAvailabilityUI(data.status, data.updatedAt);
+      updateACTStatus(data.status || 'available');
     } else {
-      // No config doc yet — show default
-      updateAvailabilityUI('available', null);
+      updateACTStatus('available');
     }
   }, err => {
     console.error('Availability listener error:', err);
-    updateAvailabilityUI('available', null);
+    updateACTStatus('available');
   });
 
-  function updateAvailabilityUI(status, updatedAt) {
-    const hero = document.getElementById('slotHero');
-    const display = document.getElementById('statusDisplay');
-    const subtitle = document.getElementById('statusSubtitle');
-    const statusText = document.getElementById('statusText');
-    const lastUpdated = document.getElementById('lastUpdated');
-    const updateTime = document.getElementById('updateTime');
-    const actDot = document.getElementById('actBusyDot');
+  function updateACTStatus(status) {
+    actStatus = status;
+    const color = statusToColor[status] || 'green';
+    const label = statusToLabel[status] || 'AVAILABLE';
 
-    hero.className = 'slot-hero';
+    // Update map marker
+    actMarker.setIcon(createMarkerIcon(color, true));
 
-    const statusMap = {
-      available: { text: 'AVAILABLE', sub: 'Motorcycle slots are open', class: '', cardColor: '', dotClass: 'green' },
-      few:       { text: 'FEW SLOTS', sub: 'Limited slots remaining — come soon', class: 'status-few', cardColor: 'amber', dotClass: 'yellow' },
-      full:      { text: 'FULL', sub: 'No slots available right now', class: 'status-full', cardColor: 'red', dotClass: 'red' }
-    };
-
-    const s = statusMap[status] || statusMap.available;
-    if (s.class) hero.classList.add(s.class);
-
-    display.textContent = s.text;
-    subtitle.textContent = s.sub;
-    statusText.textContent = s.text;
-    statusText.className = 'status-card-value' + (s.cardColor ? ' ' + s.cardColor : '');
-
-    // ACT busyness dot in comparison table
-    actDot.className = 'busy-dot ' + s.dotClass;
-
-    // Timestamp
-    if (updatedAt && updatedAt.toDate) {
-      const d = updatedAt.toDate();
-      const timeStr = d.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' });
-      updateTime.textContent = timeStr;
-      lastUpdated.textContent = timeStr;
-    } else {
-      updateTime.textContent = 'just now';
-      lastUpdated.textContent = '--';
-    }
+    // Update card
+    const dot = document.getElementById('actCardDot');
+    const statusEl = document.getElementById('actCardStatus');
+    dot.className = 'parking-card-dot ' + color;
+    statusEl.className = 'parking-card-status ' + color;
+    statusEl.textContent = label;
   }
 
   // =================================================================
-  // PROMOS — Real-time listener for active promos
+  // PROMOS — Real-time listener
   // =================================================================
   db.collection('promos')
     .where('active', '==', true)
@@ -1250,85 +1275,55 @@
     .onSnapshot(snapshot => {
       const now = new Date();
       let foundPromo = null;
-
       snapshot.forEach(doc => {
         const data = doc.data();
         const endTime = data.endTime && data.endTime.toDate ? data.endTime.toDate() : null;
-        if (endTime && endTime > now) {
-          if (!foundPromo) {
-            foundPromo = { id: doc.id, ...data };
-          }
+        if (endTime && endTime > now && !foundPromo) {
+          foundPromo = { id: doc.id, ...data };
         }
       });
-
       if (foundPromo) {
         activePromo = foundPromo;
         renderPromo(foundPromo);
-        if (currentUser) {
-          checkUserClaim(foundPromo.id);
-        }
+        if (currentUser) checkUserClaim(foundPromo.id);
       } else {
         activePromo = null;
         document.getElementById('promoBanner').classList.remove('active');
         if (countdownInterval) clearInterval(countdownInterval);
       }
-    }, err => {
-      console.error('Promos listener error:', err);
-    });
+    }, err => { console.error('Promos listener error:', err); });
 
   function renderPromo(promo) {
-    const banner = document.getElementById('promoBanner');
     document.getElementById('promoTitle').textContent = promo.title;
     document.getElementById('promoDesc').textContent = promo.description || '';
-
     const maxClaims = promo.maxClaims || 0;
     const claimCount = promo.claimCount || 0;
     const remaining = Math.max(0, maxClaims - claimCount);
     document.getElementById('promoClaims').textContent =
       maxClaims > 0 ? `${remaining} of ${maxClaims} remaining` : '';
-
-    // Disable if max claims reached
     const btn = document.getElementById('promoClaimBtn');
     if (maxClaims > 0 && claimCount >= maxClaims) {
       btn.textContent = 'Sold Out';
       btn.disabled = true;
       btn.classList.remove('claimed');
     }
-
-    // Start countdown
     startCountdown(promo);
-
-    banner.classList.add('active');
+    document.getElementById('promoBanner').classList.add('active');
   }
 
   function startCountdown(promo) {
     if (countdownInterval) clearInterval(countdownInterval);
     const el = document.getElementById('promoCountdown');
     const endTime = promo.endTime && promo.endTime.toDate ? promo.endTime.toDate() : null;
-
-    if (!endTime) {
-      el.textContent = '';
-      return;
-    }
-
+    if (!endTime) { el.textContent = ''; return; }
     function tick() {
-      const now = new Date();
-      const diff = endTime - now;
-      if (diff <= 0) {
-        el.textContent = 'Expired';
-        clearInterval(countdownInterval);
-        return;
-      }
+      const diff = endTime - new Date();
+      if (diff <= 0) { el.textContent = 'Expired'; clearInterval(countdownInterval); return; }
       const hrs = Math.floor(diff / 3600000);
       const mins = Math.floor((diff % 3600000) / 60000);
       const secs = Math.floor((diff % 60000) / 1000);
-      if (hrs > 0) {
-        el.textContent = `⏱ ${hrs}h ${mins}m ${secs}s left`;
-      } else {
-        el.textContent = `⏱ ${mins}m ${secs}s left`;
-      }
+      el.textContent = hrs > 0 ? `⏱ ${hrs}h ${mins}m ${secs}s left` : `⏱ ${mins}m ${secs}s left`;
     }
-
     tick();
     countdownInterval = setInterval(tick, 1000);
   }
@@ -1341,9 +1336,7 @@
     const snap = await db.collection('claims')
       .where('promoId', '==', promoId)
       .where('userId', '==', currentUser.uid)
-      .limit(1)
-      .get();
-
+      .limit(1).get();
     userHasClaimed = !snap.empty;
     updateClaimButton();
   }
@@ -1351,86 +1344,43 @@
   function updateClaimButton() {
     const btn = document.getElementById('promoClaimBtn');
     if (!activePromo) return;
-
     const maxClaims = activePromo.maxClaims || 0;
     const claimCount = activePromo.claimCount || 0;
-
     if (userHasClaimed) {
-      btn.textContent = 'Claimed ✓';
-      btn.disabled = true;
-      btn.classList.add('claimed');
+      btn.textContent = 'Claimed ✓'; btn.disabled = true; btn.classList.add('claimed');
     } else if (maxClaims > 0 && claimCount >= maxClaims) {
-      btn.textContent = 'Sold Out';
-      btn.disabled = true;
-      btn.classList.remove('claimed');
+      btn.textContent = 'Sold Out'; btn.disabled = true; btn.classList.remove('claimed');
     } else {
-      btn.textContent = 'Claim';
-      btn.disabled = false;
-      btn.classList.remove('claimed');
+      btn.textContent = 'Claim'; btn.disabled = false; btn.classList.remove('claimed');
     }
   }
 
   async function handleClaim() {
     if (!activePromo) return;
-
-    if (!currentUser) {
-      showToast('Sign in with Google to claim this promo', 'error');
-      handleLogin();
-      return;
-    }
-
+    if (!currentUser) { showToast('Sign in with Google to claim this promo', 'error'); handleLogin(); return; }
     if (userHasClaimed) return;
-
     const btn = document.getElementById('promoClaimBtn');
-    btn.disabled = true;
-    btn.textContent = 'Claiming...';
-
+    btn.disabled = true; btn.textContent = 'Claiming...';
     try {
-      // Check max claims
-      const maxClaims = activePromo.maxClaims || 0;
-      const claimCount = activePromo.claimCount || 0;
-      if (maxClaims > 0 && claimCount >= maxClaims) {
-        showToast('Sorry, this promo is sold out!', 'error');
-        btn.textContent = 'Sold Out';
-        return;
-      }
-
-      // Check if already claimed
       const existing = await db.collection('claims')
         .where('promoId', '==', activePromo.id)
         .where('userId', '==', currentUser.uid)
-        .limit(1)
-        .get();
-
-      if (!existing.empty) {
-        userHasClaimed = true;
-        updateClaimButton();
-        showToast('You already claimed this promo!', 'error');
-        return;
-      }
-
-      // Write claim
+        .limit(1).get();
+      if (!existing.empty) { userHasClaimed = true; updateClaimButton(); showToast('You already claimed this promo!', 'error'); return; }
       await db.collection('claims').add({
-        promoId: activePromo.id,
-        userId: currentUser.uid,
-        userEmail: currentUser.email || '',
-        userName: currentUser.displayName || '',
+        promoId: activePromo.id, userId: currentUser.uid,
+        userEmail: currentUser.email || '', userName: currentUser.displayName || '',
         claimedAt: firebase.firestore.FieldValue.serverTimestamp()
       });
-
-      // Increment claim count
       await db.collection('promos').doc(activePromo.id).update({
         claimCount: firebase.firestore.FieldValue.increment(1)
       });
-
-      userHasClaimed = true;
-      updateClaimButton();
+      userHasClaimed = true; updateClaimButton();
       showToast('Promo claimed! Show this to the attendant.', 'success');
     } catch (err) {
       console.error('Claim error:', err);
       showToast('Failed to claim. Please try again.', 'error');
-      btn.disabled = false;
-      btn.textContent = 'Claim';
+      btn.disabled = false; btn.textContent = 'Claim';
     }
   }
 
@@ -1441,31 +1391,22 @@
     try {
       const voucherRef = db.collection('vouchers').doc(user.uid);
       const doc = await voucherRef.get();
-
       if (!doc.exists) {
-        // First-time user — generate voucher code and save
         const code = generateVoucherCode();
         await voucherRef.set({
-          code: code,
-          userId: user.uid,
-          userEmail: user.email || '',
-          userName: user.displayName || '',
-          used: false,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          code: code, userId: user.uid,
+          userEmail: user.email || '', userName: user.displayName || '',
+          used: false, createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         showVoucherModal(user.displayName, code);
       }
-    } catch (err) {
-      console.error('Voucher check error:', err);
-    }
+    } catch (err) { console.error('Voucher check error:', err); }
   }
 
   function generateVoucherCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let code = 'ACT-';
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
+    for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
     return code;
   }
 
@@ -1486,13 +1427,9 @@
   function calculateRate() {
     const hours = parseInt(document.getElementById('calcHours').value);
     let fee;
-    if (hours <= 3) {
-      fee = 30;
-    } else if (hours <= 12) {
-      fee = 30 + (hours - 3) * 10;
-    } else {
-      fee = 120;
-    }
+    if (hours <= 3) fee = 30;
+    else if (hours <= 12) fee = 30 + (hours - 3) * 10;
+    else fee = 120;
     document.getElementById('calcResult').textContent = '₱' + fee;
   }
 
